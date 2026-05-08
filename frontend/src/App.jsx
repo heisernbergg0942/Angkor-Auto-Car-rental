@@ -10,6 +10,7 @@ import VehicleDetailPage from './pages/customer/VehicleDetailPage';
 import MyTripsPage from './pages/customer/MyTripsPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
 import SupportPage from './pages/customer/SupportPage';
+import PaymentSuccessPage from './pages/customer/PaymentSuccessPage';
 
 // Admin pages
 import DashboardPage from './pages/admin/DashboardPage';
@@ -31,6 +32,7 @@ function App() {
         <Route path="/browse" element={<FleetPage />} />
         <Route path="/browse/:id" element={<VehicleDetailPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/my-trips" element={<MyTripsPage />} />
 
