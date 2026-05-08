@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 // Customer pages
 import LoginPage from './pages/customer/LoginPage';
 import RegisterPage from './pages/customer/RegisterPage';
+import ForgotPasswordPage from './pages/customer/ForgotPasswordPage';
 import LandingPage from './pages/customer/LandingPage';
 import FleetPage from './pages/customer/FleetPage';
 import VehicleDetailPage from './pages/customer/VehicleDetailPage';
@@ -26,6 +27,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/browse" element={<FleetPage />} />
         <Route path="/browse/:id" element={<VehicleDetailPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

@@ -7,7 +7,7 @@ import {
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/fleet', label: 'Fleet Management', icon: Car },
+  { to: '/admin/fleet', label: 'Angkor auto', icon: Car },
   { to: '/admin/rentals', label: 'Rental Logic', icon: BookOpen },
   { to: '/admin/customers', label: 'Customer Data', icon: Users },
   { to: '/admin/revenue', label: 'Revenue', icon: DollarSign },
@@ -42,7 +42,7 @@ export default function AdminLayout({ children }) {
             />
           </div>
           <div>
-            <div className="font-bold text-[#2D6A4F] text-sm leading-tight">Fleet Admin</div>
+            <div className="font-bold text-[#2D6A4F] text-sm leading-tight">Angkor auto Admin</div>
             <div className="text-[10px] text-gray-400 leading-tight">Global Operations</div>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function AdminLayout({ children }) {
           <button onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
-          <span className="font-bold text-[#2D6A4F] text-sm">Fleet Admin</span>
+          <span className="font-bold text-[#2D6A4F] text-sm">Angkor Auto Admin</span>
         </div>
 
         <main className="flex-1 overflow-auto bg-gray-50">
@@ -110,7 +110,7 @@ export default function AdminLayout({ children }) {
         </main>
 
         <footer className="text-center text-[11px] text-gray-400 py-2.5 border-t border-gray-100 bg-white">
-          © 2024 AutoSage Fleet Systems. All rights reserved.
+          © 2026 Angkor Auto Systems. All rights reserved.
         </footer>
       </div>
     </div>

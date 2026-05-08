@@ -52,8 +52,8 @@ export default function CustomerLayout({ children }) {
               </Link>
               <div className="hidden md:flex items-center gap-2 ml-2 pl-3 border-l border-gray-100">
                 <div className="text-right">
-                  <div className="text-xs font-semibold text-gray-800 leading-none">Alex Rivera</div>
-                  <div className="text-[10px] text-gray-400 leading-none mt-0.5">Fleet Manager</div>
+                  <div className="text-xs font-semibold text-gray-800 leading-none">Leng Suytong</div>
+                  <div className="text-[10px] text-gray-400 leading-none mt-0.5">Angkor Auto Manager</div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
                   <User className="w-4 h-4 text-gray-500" />
@@ -86,14 +86,14 @@ export default function CustomerLayout({ children }) {
               <div className="w-6 h-6 bg-[#2D6A4F] rounded-md flex items-center justify-center">
                 <Car className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="font-bold text-[#2D6A4F] text-sm">FleetRent</span>
+              <span className="font-bold text-[#2D6A4F] text-sm">Angkor Auto</span>
             </Link>
             <div className="flex flex-wrap justify-center gap-4 text-[11px] text-gray-400">
               {['Privacy Policy', 'Terms of Service', 'Fleet Insurance', 'Partner Program', 'Contact'].map(l => (
                 <a key={l} href="#" className="hover:text-gray-600 transition-colors">{l}</a>
               ))}
             </div>
-            <div className="text-[11px] text-gray-400">© 2024 FleetStream Management Systems. All rights reserved. • V 4.2.1-stable</div>
+            <div className="text-[11px] text-gray-400">© 2026 Angkor Auto Systems. All rights reserved.</div>
           </div>
         </div>
       </footer>

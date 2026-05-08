@@ -45,9 +45,9 @@ export default function SupportPage() {
       primary: false
     },
     {
-      id: 'fleet',
+      id: 'Cars',
       icon: Car,
-      title: 'The Fleet',
+      title: 'Cars',
       desc: 'Vehicle specs and features.',
       links: [],
       primary: false

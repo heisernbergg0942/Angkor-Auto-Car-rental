@@ -34,11 +34,7 @@ export default function LandingPage() {
                     if (link === 'Browse') navigate('/browse');
                     if (link === 'Support') navigate('/support');
                   }}
-                  className={`px-3 py-5 text-sm transition-colors ${
-                    i === 2
-                      ? 'text-[#2D6A4F] font-semibold border-b-2 border-[#2D6A4F]'
-                      : 'text-gray-500 hover:text-gray-800'
-                  }`}
+                  className="px-3 py-5 text-sm transition-colors text-gray-500 hover:text-gray-800"
                 >
                   {link}
                 </a>
@@ -57,6 +53,12 @@ export default function LandingPage() {
               >
                 Sign Up
               </Link>
+              <button
+                onClick={() => navigate('/my-trips')}
+                className="text-[#2D6A4F] bg-white border border-[#2D6A4F] text-xs font-semibold px-4 py-2 rounded-md hover:bg-[#e8f3ee] transition-colors"
+              >
+                My Trips
+              </button>
               <button
                 onClick={() => navigate('/browse')}
                 className="bg-[#2D6A4F] text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-[#1B4332] transition-colors"
@@ -235,7 +237,7 @@ export default function LandingPage() {
             <div className="flex-1 max-w-md">
               <h2 className="text-xl font-bold text-gray-900 mb-3">Engineered for Reliability</h2>
               <p className="text-xs text-gray-500 leading-relaxed mb-7">
-                We understand that in business, time is an asset. Our fleet management ensures every vehicle meets stringent safety and cleanliness standards, so you can focus on the road ahead.
+                We understand that in business, time is an asset. Our Car rental management ensures every vehicle meets stringent safety and cleanliness standards, so you can focus on the road ahead.
               </p>
               <div className="space-y-5">
                 {features.map(({ icon: Icon, title, desc }) => (
@@ -258,7 +260,7 @@ export default function LandingPage() {
             <div className="flex-1 max-w-md">
               <div className="rounded-2xl overflow-hidden shadow-lg" style={{ height: '280px' }}>
                 <img
-                  src="https://images.unsplash.com/photo-1574169208507-843761246aa8?w=800&q=80"
+                  src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80"
                   alt="Driver in premium vehicle"
                   className="w-full h-full object-cover"
                   onError={e => {
@@ -275,13 +277,13 @@ export default function LandingPage() {
       {/* ===== FOOTER ===== */}
       <footer className="bg-white border-t border-gray-100 py-6">
         <div className="max-w-screen-lg mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="font-bold text-[#2D6A4F] text-sm">AutoSage Rental</span>
+          <span className="font-bold text-[#2D6A4F] text-sm">Angkor Auto Car Rental </span>
           <div className="flex flex-wrap justify-center gap-4 text-[11px] text-gray-400">
             {['Privacy Policy', 'Terms of Service', 'Fleet Insurance', 'Partner Program', 'Contact'].map(l => (
               <a key={l} href="#" className="hover:text-gray-600">{l}</a>
             ))}
           </div>
-          <span className="text-[11px] text-gray-400">© 2024 AutoSage Fleet Systems. All rights reserved.</span>
+          <span className="text-[11px] text-gray-400">© 2026 Angkor Auto Systems. All rights reserved.</span>
         </div>
       </footer>
 
