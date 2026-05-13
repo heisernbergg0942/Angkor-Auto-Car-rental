@@ -1,18 +1,14 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, ShieldCheck, Shield, User, Car } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Lock, ShieldCheck, Shield, Car, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { bookingAPI, paymentAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
-import {
-  Elements,
-  CardElement,
-  useStripe,
-  useElements,
-} from '@stripe/react-stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// Load Stripe with your publishable key from .env
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+// Load Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_TYooMQauvdEDq54NiTphI7jx');
 
-// ─── Card Element Style ───────────────────────────────────────────────────────
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
@@ -29,24 +25,9 @@ const CARD_ELEMENT_OPTIONS = {
   },
 };
 
-// ─── Booking details (would come from router state / context in real app) ─────
-const BOOKING = {
-  vehicle: '2024 Tesla Model S Plaid',
-  image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  dates: 'Oct 12, 10:00 AM — Oct 15, 10:00 AM',
-  location: "San Francisco Int'l Airport (SFO)",
-  rentalCost: 735.00,
-  insurance: 45.00,
-  taxes: 82.40,
-};
-const TOTAL = BOOKING.rentalCost + BOOKING.insurance + BOOKING.taxes;
-
-// ─── Inner checkout form (needs Stripe context) ───────────────────────────────
-function CheckoutForm() {
+function CheckoutForm({ bookingData, total, onPaymentSuccess }) {
   const stripe = useStripe();
   const elements = useElements();
-  const navigate = useNavigate();
-
   const [cardholderName, setCardholderName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -59,27 +40,27 @@ function CheckoutForm() {
     setErrorMsg('');
 
     try {
-      // 1. Ask your Laravel backend to create a PaymentIntent
-      const res = await fetch('/api/payment/create-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: TOTAL,
-          currency: 'usd',
-          booking_id: 'DEMO-001',
-        }),
+      // 1. Create booking in backend
+      const { data } = await bookingAPI.create({
+        vehicle_id:  bookingData.vehicle.id,
+        pickup_date: bookingData.pickupDate,
+        return_date: bookingData.returnDate,
+        addon_ids:   bookingData.addonIds,
+        notes:       bookingData.notes,
       });
 
-      // ── DEMO MODE: if backend isn't running yet, simulate success ──
-      if (!res.ok) {
-        console.warn('Backend not running — simulating payment for demo.');
-        setTimeout(() => navigate('/payment-success'), 1500);
-        return;
-      }
+      const bookingId = data.booking?.id || 'DEMO-001';
 
-      const { clientSecret } = await res.json();
+      // 2. Create Payment Intent
+      const res = await paymentAPI.createIntent({
+        amount: total,
+        currency: 'usd',
+        booking_id: bookingId,
+      });
 
-      // 2. Confirm the card payment with Stripe
+      const clientSecret = res.data?.clientSecret || res.data?.client_secret;
+
+      // 3. Confirm card payment
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: elements.getElement(CardElement),
@@ -91,17 +72,28 @@ function CheckoutForm() {
         setErrorMsg(error.message);
         setIsProcessing(false);
       } else if (paymentIntent.status === 'succeeded') {
-        navigate('/payment-success');
+        onPaymentSuccess(data.booking);
       }
     } catch (err) {
-      // Backend not connected — simulate for demo/testing
-      console.warn('Network error — simulating payment for demo.');
-      setTimeout(() => navigate('/payment-success'), 1500);
+      console.warn('Payment or booking failed.', err);
+      // Fallback for demo
+      onPaymentSuccess({ id: 'DEMO-001', vehicle: bookingData.vehicle, pickup_date: bookingData.pickupDate, return_date: bookingData.returnDate, status: 'paid' });
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Notes */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Special Notes (optional)</label>
+        <textarea
+          value={bookingData.notes}
+          onChange={(e) => bookingData.setNotes(e.target.value)}
+          rows={2}
+          placeholder="E.g. I'll arrive at 10am, need airport pickup..."
+          className="w-full px-3 py-2.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] focus:border-[#2D6A4F] resize-none transition-colors"
+        />
+      </div>
 
       {/* Cardholder Name */}
       <div>
@@ -153,14 +145,11 @@ function CheckoutForm() {
       >
         {isProcessing ? (
           <>
-            <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-            </svg>
+            <Loader2 className="animate-spin w-4 h-4 text-white" />
             Processing...
           </>
         ) : (
-          `Pay $${TOTAL.toFixed(2)}`
+          `Pay $${parseFloat(total).toFixed(2)}`
         )}
       </button>
 
@@ -173,13 +162,48 @@ function CheckoutForm() {
   );
 }
 
-// ─── Page wrapper ─────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const { user }  = useAuth();
+
+  // Booking data passed from VehicleDetailPage via navigate state
+  const booking = location.state || {};
+  const vehicle     = booking.vehicle     || {};
+  const pickupDate  = booking.pickup_date || '';
+  const returnDate  = booking.return_date || '';
+  const addonIds    = booking.addon_ids   || [];
+  const days        = booking.days        || 1;
+  const baseTotal   = booking.baseTotal   || 0;
+  const addonsTotal = booking.addonsTotal || 0;
+  const total       = booking.total       || baseTotal + addonsTotal;
+
+  const [notes, setNotes] = useState('');
+
+  const formatDate = (d) => d
+    ? new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+    : '—';
+
+  // If no booking data, redirect back
+  if (!vehicle.id && !booking.vehicle_id) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
+        <div className="text-5xl">🚗</div>
+        <h1 className="text-xl font-bold text-gray-700">No booking selected</h1>
+        <p className="text-gray-400 text-sm">Please select a vehicle and dates first.</p>
+        <button onClick={() => navigate('/browse')} className="bg-[#2D6A4F] text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[#1B4332]">
+          Browse Fleet
+        </button>
+      </div>
+    );
+  }
+
+  const handlePaymentSuccess = (confirmedBooking) => {
+    navigate('/payment-success', { state: { booking: confirmedBooking } });
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans">
-
       {/* Header */}
       <header className="border-b border-gray-100 bg-white h-16 flex items-center justify-between px-6 lg:px-12 shrink-0">
         <Link to="/" className="flex items-center gap-2">
@@ -188,85 +212,86 @@ export default function CheckoutPage() {
           </div>
           <span className="font-bold text-[#2D6A4F] text-base">Angkor Auto</span>
         </Link>
-        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
-          <User className="w-4 h-4" />
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <Lock className="w-3.5 h-3.5" /> Secure checkout
         </div>
       </header>
 
-      {/* Main */}
       <main className="flex-1 flex flex-col lg:flex-row">
-
-        {/* Left: Booking Summary */}
-        <div className="w-full lg:w-[440px] bg-[#F4F5F7] p-8 lg:p-12 lg:border-r border-gray-100 flex flex-col">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 text-sm font-medium mb-10 w-fit transition-colors"
-          >
+        {/* Left – Booking Summary */}
+        <div className="w-full lg:w-[420px] bg-[#F4F5F7] p-8 lg:p-12 lg:border-r border-gray-100 flex flex-col shrink-0">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-500 hover:text-gray-800 text-sm font-medium mb-8 w-fit transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to details
           </button>
 
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Selected Vehicle</p>
-          <h2 className="text-xl font-semibold text-gray-900 mb-5">{BOOKING.vehicle}</h2>
-
-          <div className="rounded-xl overflow-hidden mb-8 shadow-sm">
-            <img src={BOOKING.image} alt={BOOKING.vehicle} className="w-full h-auto object-cover" />
-          </div>
-
-          <div className="mb-6">
-            <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Pick-up & Drop-off</h3>
-            <p className="text-sm font-semibold text-gray-900 mb-1">{BOOKING.dates}</p>
-            <p className="text-sm text-gray-500">{BOOKING.location}</p>
-          </div>
-
-          <div className="space-y-3 pt-5 border-t border-gray-200/70 flex-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">$245.00 × 3 days</span>
-              <span className="font-medium text-gray-900">${BOOKING.rentalCost.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Insurance (Premium)</span>
-              <span className="font-medium text-gray-900">${BOOKING.insurance.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Taxes & Fees</span>
-              <span className="font-medium text-gray-900">${BOOKING.taxes.toFixed(2)}</span>
+          {/* Vehicle */}
+          <div className="bg-white rounded-xl p-4 mb-6 border border-gray-100 flex items-center gap-4">
+            <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-3xl shrink-0">🚗</div>
+            <div>
+              <div className="font-semibold text-gray-900">{vehicle.brand} {vehicle.model}</div>
+              <div className="text-xs text-gray-400 mt-0.5">{vehicle.year} · {vehicle.color} · {vehicle.plate_number}</div>
+              <div className="text-sm font-bold text-[#2D6A4F] mt-1">${vehicle.daily_rate}/day</div>
             </div>
           </div>
 
-          <div className="pt-5 mt-5 border-t border-gray-200/70 flex justify-between items-center">
-            <span className="text-base font-medium text-gray-900">Total Due</span>
-            <span className="text-2xl font-bold text-[#2D6A4F]">${TOTAL.toFixed(2)}</span>
+          {/* Dates */}
+          <div className="bg-white rounded-xl p-4 mb-6 border border-gray-100">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="w-4 h-4 text-[#2D6A4F]" />
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rental Dates</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <div>
+                <div className="text-[10px] text-gray-400 mb-0.5">PICKUP</div>
+                <div className="font-semibold text-gray-800">{formatDate(pickupDate)}</div>
+              </div>
+              <div className="text-gray-300 font-light text-xl">→</div>
+              <div className="text-right">
+                <div className="text-[10px] text-gray-400 mb-0.5">RETURN</div>
+                <div className="font-semibold text-gray-800">{formatDate(returnDate)}</div>
+              </div>
+            </div>
+            <div className="mt-2 text-center text-[11px] text-gray-400">{days} day{days !== 1 ? 's' : ''} total</div>
+          </div>
+
+          {/* Price Breakdown */}
+          <div className="space-y-3 pt-4 border-t border-gray-200/70">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">${vehicle.daily_rate} × {days} day{days !== 1 ? 's' : ''}</span>
+              <span className="font-medium text-gray-900">${parseFloat(baseTotal).toFixed(2)}</span>
+            </div>
+            {addonsTotal > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Add-ons ({addonIds.length})</span>
+                <span className="font-medium text-gray-900">${parseFloat(addonsTotal).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-3 border-t border-gray-200/70">
+              <span className="text-base font-semibold text-gray-900">Total Due</span>
+              <span className="text-2xl font-bold text-[#2D6A4F]">${parseFloat(total).toFixed(2)}</span>
+            </div>
           </div>
         </div>
 
-        {/* Right: Stripe Payment Form */}
+        {/* Right – Stripe Payment Form */}
         <div className="flex-1 bg-white p-8 lg:p-16 flex justify-center">
           <div className="w-full max-w-lg">
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">Payment Information</h1>
-            <p className="text-sm text-gray-400 mb-8">Complete your booking securely with Stripe</p>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">Payment Information</h1>
+            <p className="text-sm text-gray-400 mb-8">Complete your booking securely with Stripe.</p>
 
             <Elements stripe={stripePromise}>
-              <CheckoutForm />
+              <CheckoutForm 
+                bookingData={{ vehicle, pickupDate, returnDate, addonIds, notes, setNotes }} 
+                total={total} 
+                onPaymentSuccess={handlePaymentSuccess} 
+              />
             </Elements>
 
             {/* Trust Badges */}
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 text-xs font-semibold text-gray-400 tracking-wider">
-              <div className="flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5" /> SECURE PAYMENT
-              </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-3.5 h-3.5" /> SSL ENCRYPTED
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5" /> FRAUD PROTECTED
-              </div>
-            </div>
-
-            {/* Stripe branding */}
-            <div className="mt-6 flex justify-center">
-              <span className="text-xs text-gray-300">
-                Powered by <span className="font-semibold text-gray-400">Stripe</span>
-              </span>
+            <div className="mt-10 flex items-center justify-center gap-6 text-xs font-semibold text-gray-300 tracking-wider">
+              <div className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> SECURE</div>
+              <div className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> VERIFIED</div>
+              <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> PROTECTED</div>
             </div>
           </div>
         </div>

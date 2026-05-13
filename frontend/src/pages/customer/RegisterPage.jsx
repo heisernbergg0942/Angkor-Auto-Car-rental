@@ -1,25 +1,46 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, ShieldCheck, Zap, Info, UserCircle2, ArrowRight, BookOpen } from 'lucide-react';
+import { User, ShieldCheck, Zap, Info, UserCircle2, ArrowRight, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function RegisterPage() {
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    agree: false
+    name: '', email: '', phone: '', password: '', agree: false
   });
+  const [error,   setError]   = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({ ...formData, [e.target.name]: value });
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    navigate('/login');
+    setError('');
+    setLoading(true);
+    try {
+      const user = await register({
+        name:     formData.name,
+        email:    formData.email,
+        phone:    formData.phone,
+        password: formData.password,
+        password_confirmation: formData.password,
+        role:     'customer',
+      });
+      navigate(user.role === 'admin' || user.role === 'staff' ? '/admin' : '/');
+    } catch (err) {
+      const errors = err.response?.data?.errors;
+      if (errors) {
+        setError(Object.values(errors).flat().join(' '));
+      } else {
+        setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,6 +99,12 @@ export default function RegisterPage() {
         <div className="max-w-2xl w-full mx-auto">
           <h1 className="text-xl font-medium text-gray-800 mb-2">Create Professional Account</h1>
           <p className="text-gray-600 text-[15px] mb-10">Complete the form below to begin your journey with FleetRent.</p>
+
+          {error && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+            </div>
+          )}
 
           <form onSubmit={handleRegister}>
             {/* Personal Information */}
@@ -207,9 +234,10 @@ export default function RegisterPage() {
 
             <button 
               type="submit" 
-              className="w-full bg-[#3B6955] text-white text-[15px] font-medium py-3 rounded-[3px] hover:bg-[#2d5242] transition-colors flex items-center justify-center gap-2 shadow-sm"
+              disabled={loading}
+              className="w-full bg-[#3B6955] text-white text-[15px] font-medium py-3 rounded-[3px] hover:bg-[#2d5242] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60"
             >
-              Create Account <ArrowRight className="w-4 h-4 ml-1" />
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><span>Create Account</span><ArrowRight className="w-4 h-4 ml-1" /></>}
             </button>
 
             <div className="mt-8 text-center text-[14px] text-gray-600">

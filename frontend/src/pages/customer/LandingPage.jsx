@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Search, ChevronRight, Users, BriefcaseBusiness, Zap, Shield, Phone, Car } from 'lucide-react';
+import { MapPin, Calendar, Search, ChevronRight, Users, BriefcaseBusiness, Zap, Shield, Phone, Car, LogOut } from 'lucide-react';
 import { featuredVehicles } from '../../data/vehicles';
+import { useAuth } from '../../context/AuthContext';
 
 const navLinks = ['Browse', 'Support'];
 
@@ -13,6 +14,7 @@ const features = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { user, logout, isAdminOrStaff } = useAuth();
   const [pickup, setPickup] = useState('');
   const [pickupDate, setPickupDate] = useState('');
   const [dropDate, setDropDate] = useState('');
@@ -41,24 +43,39 @@ export default function LandingPage() {
               ))}
             </nav>
             <div className="ml-auto flex items-center gap-3">
-              <Link 
-                to="/login"
-                className="text-xs font-semibold text-gray-600 hover:text-gray-900 px-2 py-2"
-              >
-                Login
-              </Link>
-              <Link 
-                to="/register"
-                className="bg-gray-100 text-gray-800 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Sign Up
-              </Link>
-              <button
-                onClick={() => navigate('/my-trips')}
-                className="text-[#2D6A4F] bg-white border border-[#2D6A4F] text-xs font-semibold px-4 py-2 rounded-md hover:bg-[#e8f3ee] transition-colors"
-              >
-                My Trips
-              </button>
+              {user ? (
+                // ── Logged-in state ──
+                <>
+                  <button
+                    onClick={() => navigate('/my-trips')}
+                    className="text-[#2D6A4F] bg-white border border-[#2D6A4F] text-xs font-semibold px-4 py-2 rounded-md hover:bg-[#e8f3ee] transition-colors"
+                  >
+                    My Trips
+                  </button>
+                  <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
+                    <div className="text-right hidden sm:block">
+                      <div className="text-xs font-semibold text-gray-800 leading-none">{user.name}</div>
+                      <div className="text-[10px] text-gray-400 capitalize">{user.role}</div>
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-[#2D6A4F]/10 flex items-center justify-center text-[#2D6A4F] font-bold text-sm shrink-0">
+                      {user.name?.charAt(0)}
+                    </div>
+                    <button
+                      onClick={async () => { await logout(); navigate('/'); }}
+                      className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                      title="Logout"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                // ── Guest state ──
+                <>
+                  <Link to="/login" className="text-xs font-semibold text-gray-600 hover:text-gray-900 px-2 py-2">Login</Link>
+                  <Link to="/register" className="bg-gray-100 text-gray-800 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-200 transition-colors">Sign Up</Link>
+                </>
+              )}
               <button
                 onClick={() => navigate('/browse')}
                 className="bg-[#2D6A4F] text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-[#1B4332] transition-colors"
@@ -287,15 +304,17 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* Admin portal link for testing */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <button
-          onClick={() => navigate('/admin')}
-          className="bg-[#2D6A4F] text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:bg-[#1B4332] transition-colors"
-        >
-          🔧 Admin Portal
-        </button>
-      </div>
+      {/* Admin portal link — only for admins/staff */}
+      {isAdminOrStaff && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={() => navigate('/admin')}
+            className="bg-[#2D6A4F] text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:bg-[#1B4332] transition-colors"
+          >
+            🔧 Admin Portal
+          </button>
+        </div>
+      )}
     </div>
   );
 }

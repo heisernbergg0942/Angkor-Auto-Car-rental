@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
+use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
@@ -13,28 +15,46 @@ class PaymentController extends Controller
         Stripe::setApiKey(config('services.stripe.secret'));
     }
 
-    /**
-     * Create a Stripe PaymentIntent for a booking.
-     */
+    public function index(Request $request)
+    {
+        $payments = Payment::with('invoice.rental.booking.customer')
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->latest()
+            ->paginate(15);
+
+        return response()->json($payments);
+    }
+
     public function createIntent(Request $request)
     {
         $request->validate([
             'amount'     => 'required|numeric|min:1',
             'currency'   => 'sometimes|string|size:3',
+            'invoice_id' => 'sometimes|exists:invoices,id',
             'booking_id' => 'sometimes|string',
         ]);
 
         try {
             $paymentIntent = PaymentIntent::create([
-                'amount'   => (int) round($request->amount * 100), // convert to cents
+                'amount'   => (int) round($request->amount * 100),
                 'currency' => $request->currency ?? 'usd',
                 'metadata' => [
+                    'invoice_id' => $request->invoice_id ?? 'N/A',
                     'booking_id' => $request->booking_id ?? 'N/A',
                 ],
-                'automatic_payment_methods' => [
-                    'enabled' => true,
-                ],
+                'automatic_payment_methods' => ['enabled' => true],
             ]);
+
+            // Create a pending payment record
+            if ($request->invoice_id) {
+                Payment::create([
+                    'invoice_id'               => $request->invoice_id,
+                    'amount'                   => $request->amount,
+                    'payment_method'           => 'card',
+                    'status'                   => 'pending',
+                    'stripe_payment_intent_id' => $paymentIntent->id,
+                ]);
+            }
 
             return response()->json([
                 'clientSecret' => $paymentIntent->client_secret,
@@ -45,9 +65,6 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Handle Stripe webhook events (for production use).
-     */
     public function webhook(Request $request)
     {
         $payload   = $request->getContent();
@@ -61,13 +78,35 @@ class PaymentController extends Controller
         }
 
         if ($event->type === 'payment_intent.succeeded') {
-            $intent    = $event->data->object;
-            $bookingId = $intent->metadata->booking_id ?? null;
+            $intent = $event->data->object;
 
-            // TODO: Update booking status in database
-            // Booking::where('id', $bookingId)->update(['status' => 'paid']);
+            Payment::where('stripe_payment_intent_id', $intent->id)
+                ->update([
+                    'status'       => 'paid',
+                    'payment_date' => now(),
+                ]);
         }
 
         return response()->json(['status' => 'received']);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'invoice_id'     => 'required|exists:invoices,id',
+            'amount'         => 'required|numeric|min:0',
+            'payment_method' => 'required|in:cash,card,bank,e-wallet',
+            'payment_date'   => 'nullable|date',
+        ]);
+
+        $payment = Payment::create([
+            'invoice_id'     => $request->invoice_id,
+            'amount'         => $request->amount,
+            'payment_method' => $request->payment_method,
+            'payment_date'   => $request->payment_date ?? now(),
+            'status'         => 'paid',
+        ]);
+
+        return response()->json(['message' => 'Payment recorded', 'payment' => $payment], 201);
     }
 }

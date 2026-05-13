@@ -9,18 +9,18 @@ export default function CustomerLayout({ children }) {
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans">
       {/* ---- Top Navigation ---- */}
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
+      <header className="sticky top-0 z-30 bg-white border-b border-gray-100 ">
         <div className="max-w-screen-xl mx-auto px-6">
           <div className="flex items-center h-14">
 
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 mr-6 shrink-0">
+            <Link to="/" className="flex items-center gap-2 mr-6 shrink-0 ">
               <div className="w-7 h-7 bg-[#2D6A4F] rounded-md flex items-center justify-center">
                 <Car className="w-4 h-4 text-white" />
               </div>
               <div>
-                <div className="font-bold text-[#2D6A4F] text-sm leading-none">Angkor Auto</div>
-                <div className="text-[9px] text-gray-400 leading-none uppercase tracking-wide">Car Rental Company</div>
+                <div className="font-bold text-[#2D6A4F] text-sm leading-none p-2">Angkor Auto</div>
+                <div className="text-[9px] text-gray-400 leading-none uppercase tracking-wide ">Car Rental Company</div>
               </div>
             </Link>
 

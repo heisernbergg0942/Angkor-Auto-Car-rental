@@ -6,8 +6,8 @@ const sections = [
     icon: Globe,
     title: 'General Settings',
     fields: [
-      { label: 'Company Name', type: 'text', defaultValue: 'FleetStream Rental Systems' },
-      { label: 'Support Email', type: 'email', defaultValue: 'support@fleetstream.com' },
+      { label: 'Company Name', type: 'text', defaultValue: 'Angkor Auto Car Rental' },
+      { label: 'Support Email', type: 'email', defaultValue: 'AngkorAuto@gmail.com' },
       { label: 'Default Currency', type: 'select', options: ['USD ($)', 'EUR (€)', 'GBP (£)'] },
       { label: 'Timezone', type: 'select', options: ['America/Los_Angeles', 'America/New_York', 'Europe/London', 'Asia/Tokyo'] },
     ],
