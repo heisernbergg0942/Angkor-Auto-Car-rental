@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, ShieldCheck, Zap, Info, UserCircle2, ArrowRight, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
+import { User, ShieldCheck, Zap, Info, UserCircle2, ArrowRight, BookOpen, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { customerAPI } from '../../services/api';
 
 export default function RegisterPage() {
   const navigate    = useNavigate();
@@ -9,12 +10,27 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', password: '', agree: false
   });
+  const [documents, setDocuments] = useState({
+    nationalIdFront: null,
+    nationalIdBack: null,
+    license: null,
+  });
+  const nationalIdFrontRef = useRef(null);
+  const nationalIdBackRef = useRef(null);
+  const licenseRef = useRef(null);
+
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({ ...formData, [e.target.name]: value });
+  };
+
+  const handleFileChange = (e, docType) => {
+    if (e.target.files && e.target.files[0]) {
+      setDocuments(prev => ({ ...prev, [docType]: e.target.files[0] }));
+    }
   };
 
   const handleRegister = async (e) => {
@@ -30,6 +46,36 @@ export default function RegisterPage() {
         password_confirmation: formData.password,
         role:     'customer',
       });
+      
+      if (user && user.customer && user.customer.id) {
+        const uploadPromises = [];
+        
+        if (documents.nationalIdFront) {
+          const fd = new FormData();
+          fd.append('document_type', 'national_id');
+          fd.append('file', documents.nationalIdFront);
+          uploadPromises.push(customerAPI.uploadMyDocument(fd));
+        }
+        
+        if (documents.nationalIdBack) {
+          const fd = new FormData();
+          fd.append('document_type', 'national_id');
+          fd.append('file', documents.nationalIdBack);
+          uploadPromises.push(customerAPI.uploadMyDocument(fd));
+        }
+        
+        if (documents.license) {
+          const fd = new FormData();
+          fd.append('document_type', 'license');
+          fd.append('file', documents.license);
+          uploadPromises.push(customerAPI.uploadMyDocument(fd));
+        }
+        
+        if (uploadPromises.length > 0) {
+          await Promise.allSettled(uploadPromises);
+        }
+      }
+
       navigate(user.role === 'admin' || user.role === 'staff' ? '/admin' : '/');
     } catch (err) {
       const errors = err.response?.data?.errors;
@@ -185,32 +231,72 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-[13px] text-gray-600 mb-2">National ID (Front)</label>
-                  <div className="border border-dashed border-gray-300 rounded-sm p-6 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors bg-white">
-                    <svg className="w-5 h-5 mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    <span className="text-[13px]">Click or drag to upload</span>
+                  <input type="file" className="hidden" ref={nationalIdFrontRef} onChange={(e) => handleFileChange(e, 'nationalIdFront')} accept=".jpg,.jpeg,.png,.pdf" />
+                  <div 
+                    onClick={() => nationalIdFrontRef.current?.click()}
+                    className={`border border-dashed rounded-sm p-6 flex flex-col items-center justify-center cursor-pointer transition-colors ${documents.nationalIdFront ? 'border-[#3B6955] bg-[#F0F7F4] text-[#3B6955]' : 'border-gray-300 text-gray-500 hover:bg-gray-50 bg-white'}`}
+                  >
+                    {documents.nationalIdFront ? (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 mb-2 text-[#3B6955]" />
+                        <span className="text-[13px] text-center px-2 truncate w-full">{documents.nationalIdFront.name}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5 mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span className="text-[13px]">Click or drag to upload</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div>
                   <label className="block text-[13px] text-gray-600 mb-2">National ID (Back)</label>
-                  <div className="border border-dashed border-gray-300 rounded-sm p-6 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors bg-white">
-                    <svg className="w-5 h-5 mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    <span className="text-[13px]">Click or drag to upload</span>
+                  <input type="file" className="hidden" ref={nationalIdBackRef} onChange={(e) => handleFileChange(e, 'nationalIdBack')} accept=".jpg,.jpeg,.png,.pdf" />
+                  <div 
+                    onClick={() => nationalIdBackRef.current?.click()}
+                    className={`border border-dashed rounded-sm p-6 flex flex-col items-center justify-center cursor-pointer transition-colors ${documents.nationalIdBack ? 'border-[#3B6955] bg-[#F0F7F4] text-[#3B6955]' : 'border-gray-300 text-gray-500 hover:bg-gray-50 bg-white'}`}
+                  >
+                    {documents.nationalIdBack ? (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 mb-2 text-[#3B6955]" />
+                        <span className="text-[13px] text-center px-2 truncate w-full">{documents.nationalIdBack.name}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5 mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span className="text-[13px]">Click or drag to upload</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
 
               <div>
                 <label className="block text-[13px] text-gray-600 mb-2">Driver's License (Full Side)</label>
-                <div className="border border-dashed border-gray-300 rounded-sm p-8 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors bg-white">
-                  <svg className="w-5 h-5 mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                  </svg>
-                  <span className="text-[14px] text-gray-700 mb-1">Upload Driver's License</span>
-                  <span className="text-[9px] font-medium tracking-[0.05em] text-gray-400 uppercase">Verification required for vehicle access</span>
+                <input type="file" className="hidden" ref={licenseRef} onChange={(e) => handleFileChange(e, 'license')} accept=".jpg,.jpeg,.png,.pdf" />
+                <div 
+                  onClick={() => licenseRef.current?.click()}
+                  className={`border border-dashed rounded-sm p-8 flex flex-col items-center justify-center cursor-pointer transition-colors ${documents.license ? 'border-[#3B6955] bg-[#F0F7F4] text-[#3B6955]' : 'border-gray-300 text-gray-500 hover:bg-gray-50 bg-white'}`}
+                >
+                  {documents.license ? (
+                    <>
+                      <CheckCircle2 className="w-6 h-6 mb-2 text-[#3B6955]" />
+                      <span className="text-[14px] text-gray-800 mb-1 font-medium">{documents.license.name}</span>
+                      <span className="text-[11px] text-[#3B6955]">Ready for upload</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                      </svg>
+                      <span className="text-[14px] text-gray-700 mb-1">Upload Driver's License</span>
+                      <span className="text-[9px] font-medium tracking-[0.05em] text-gray-400 uppercase">Verification required for vehicle access</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

@@ -16,6 +16,8 @@ export default function FleetPage() {
   const [search, setSearch]       = useState(searchParams.get('q') || '');
   const [statusFilter, setStatusFilter] = useState('available');
 
+  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
+
   useEffect(() => {
     fetchVehicles();
   }, []);
@@ -154,7 +156,7 @@ export default function FleetPage() {
                   <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden">
                     {v.image ? (
                       <img
-                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${v.image}`}
+                        src={`${baseUrl}/storage/${v.image}`}
                         alt={`${v.brand} ${v.model}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />

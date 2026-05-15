@@ -83,8 +83,9 @@ export default function VehicleDetailPage() {
     </CustomerLayout>
   );
 
+  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
   const imgSrc = vehicle.image
-    ? `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${vehicle.image}`
+    ? `${baseUrl}/storage/${vehicle.image}`
     : null;
 
   const statusBadge = {
@@ -272,7 +273,13 @@ export default function VehicleDetailPage() {
                   onClick={() => navigate(`/browse/${v.id}`)}
                   className="border border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
                 >
-                  <div className="h-36 bg-gray-100 flex items-center justify-center text-4xl">🚗</div>
+                  <div className="h-36 bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden relative">
+                    {v.image ? (
+                      <img src={`${baseUrl}/storage/${v.image}`} alt={v.model} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-4xl">🚗</span>
+                    )}
+                  </div>
                   <div className="p-4">
                     <div className="flex justify-between items-start">
                       <div>

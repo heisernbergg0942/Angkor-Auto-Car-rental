@@ -76,12 +76,14 @@ export const rentalAPI = {
 
 // ── Customers ─────────────────────────────────────────────────────────────
 export const customerAPI = {
-  list:           (params) => api.get('/customers', { params }),
-  get:            (id)     => api.get(`/customers/${id}`),
-  update:         (id, data) => api.put(`/customers/${id}`, data),
-  myProfile:      ()       => api.get('/my-profile'),
-  uploadDocument: (id, data) => api.post(`/customers/${id}/documents`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  getDocuments:   (id)     => api.get(`/customers/${id}/documents`),
+  list:             (params) => api.get('/customers', { params }),
+  get:              (id)     => api.get(`/customers/${id}`),
+  update:           (id, data) => api.put(`/customers/${id}`, data),
+  myProfile:        ()       => api.get('/my-profile'),
+  uploadMyDocument: (data)   => api.post(`/my-documents`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  uploadDocument:   (id, data) => api.post(`/customers/${id}/documents`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getDocuments:     (id)     => api.get(`/customers/${id}/documents`),
+  delete:           (id)     => api.delete(`/customers/${id}`),
 };
 
 // ── Addons ────────────────────────────────────────────────────────────────

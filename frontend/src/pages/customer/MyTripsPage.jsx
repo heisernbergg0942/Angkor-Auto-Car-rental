@@ -35,6 +35,8 @@ export default function MyTripsPage() {
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
   const daysBetween = (a, b) => Math.max(1, Math.ceil((new Date(b) - new Date(a)) / (1000 * 60 * 60 * 24)));
 
+  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
+
   if (loading) return (
     <CustomerLayout>
       <div className="flex justify-center items-center py-32">
@@ -89,7 +91,13 @@ export default function MyTripsPage() {
                   <div className="flex items-start justify-between gap-4">
                     {/* Vehicle info */}
                     <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-2xl">🚗</div>
+                      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden relative">
+                        {vehicle && vehicle.image ? (
+                          <img src={`${baseUrl}/storage/${vehicle.image}`} alt={`${vehicle.brand} ${vehicle.model}`} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-2xl">🚗</span>
+                        )}
+                      </div>
                       <div>
                         <div className="font-semibold text-gray-900">
                           {vehicle ? `${vehicle.brand} ${vehicle.model}` : `Vehicle #${booking.vehicle_id}`}

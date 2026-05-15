@@ -13,6 +13,11 @@ class Customer extends Model
         'email',
         'address',
         'license_number',
+        'is_verified',
+    ];
+
+    protected $casts = [
+        'is_verified' => 'boolean',
     ];
 
     public function user()

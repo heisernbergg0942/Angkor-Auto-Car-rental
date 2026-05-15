@@ -184,6 +184,10 @@ export default function CheckoutPage() {
     ? new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
     : '—';
 
+  const imgSrc = vehicle.image
+    ? `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000'}/storage/${vehicle.image}`
+    : null;
+
   // If no booking data, redirect back
   if (!vehicle.id && !booking.vehicle_id) {
     return (
@@ -226,7 +230,13 @@ export default function CheckoutPage() {
 
           {/* Vehicle */}
           <div className="bg-white rounded-xl p-4 mb-6 border border-gray-100 flex items-center gap-4">
-            <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-3xl shrink-0">🚗</div>
+            <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden relative">
+              {imgSrc ? (
+                <img src={imgSrc} alt={`${vehicle.brand} ${vehicle.model}`} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl">🚗</span>
+              )}
+            </div>
             <div>
               <div className="font-semibold text-gray-900">{vehicle.brand} {vehicle.model}</div>
               <div className="text-xs text-gray-400 mt-0.5">{vehicle.year} · {vehicle.color} · {vehicle.plate_number}</div>
@@ -279,13 +289,28 @@ export default function CheckoutPage() {
             <h1 className="text-xl font-bold text-gray-900 mb-1">Payment Information</h1>
             <p className="text-sm text-gray-400 mb-8">Complete your booking securely with Stripe.</p>
 
-            <Elements stripe={stripePromise}>
-              <CheckoutForm 
-                bookingData={{ vehicle, pickupDate, returnDate, addonIds, notes, setNotes }} 
-                total={total} 
-                onPaymentSuccess={handlePaymentSuccess} 
-              />
-            </Elements>
+            {!user?.customer?.is_verified ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 flex flex-col items-center text-center space-y-3">
+                <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-1">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <h3 className="font-semibold text-amber-800">Verification Pending</h3>
+                <p className="text-sm text-amber-700 leading-relaxed">
+                  Your account is currently under review. You must wait for an administrator to verify your uploaded documents before you can complete a booking.
+                </p>
+                <button onClick={() => navigate('/')} className="mt-4 text-sm font-medium text-[#2D6A4F] hover:underline bg-white px-4 py-2 rounded-md border border-amber-200">
+                  Return to Home
+                </button>
+              </div>
+            ) : (
+              <Elements stripe={stripePromise}>
+                <CheckoutForm 
+                  bookingData={{ vehicle, pickupDate, returnDate, addonIds, notes, setNotes }} 
+                  total={total} 
+                  onPaymentSuccess={handlePaymentSuccess} 
+                />
+              </Elements>
+            )}
 
             {/* Trust Badges */}
             <div className="mt-10 flex items-center justify-center gap-6 text-xs font-semibold text-gray-300 tracking-wider">

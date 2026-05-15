@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Mail, Phone, Eye, Loader2, AlertCircle, X } from 'lucide-react';
+import { Search, Mail, Phone, Eye, Loader2, AlertCircle, X, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { customerAPI } from '../../services/api';
 
@@ -9,8 +9,60 @@ export default function CustomersPage() {
   const [error,     setError]     = useState('');
   const [search,    setSearch]    = useState('');
   const [selected,  setSelected]  = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { fetchCustomers(); }, []);
+
+  const handleSelectCustomer = async (c) => {
+    setSelected(c);
+    if (!c) {
+      setDocuments([]);
+      return;
+    }
+    setLoadingDocs(true);
+    try {
+      const { data } = await customerAPI.getDocuments(c.id);
+      setDocuments(data);
+    } catch (err) {
+      console.error("Failed to fetch documents", err);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!selected) return;
+    setVerifying(true);
+    try {
+      await customerAPI.update(selected.id, { is_verified: true });
+      setSelected({ ...selected, is_verified: true });
+      setCustomers(customers.map(c => c.id === selected.id ? { ...c, is_verified: true } : c));
+    } catch (err) {
+      console.error("Failed to verify", err);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selected) return;
+    if (!window.confirm(`Are you sure you want to remove ${selected.name}? This will also delete all their bookings and data.`)) return;
+    
+    setDeleting(true);
+    try {
+      await customerAPI.delete(selected.id);
+      setCustomers(customers.filter(c => c.id !== selected.id));
+      setSelected(null);
+    } catch (err) {
+      console.error("Failed to delete", err);
+      alert("Failed to remove customer. They might have active rentals.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -76,7 +128,7 @@ export default function CustomersPage() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  {['Customer','Contact','License','Address','Joined','Actions'].map(h => (
+                  {['Customer','Contact','Status','License','Address','Joined','Actions'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -101,11 +153,18 @@ export default function CustomersPage() {
                         <div className="flex items-center gap-1 text-xs text-gray-400"><Phone className="w-3 h-3" /> {c.phone || '—'}</div>
                       </div>
                     </td>
+                    <td className="px-4 py-3.5">
+                      {c.is_verified ? (
+                        <span className="px-2 py-1 rounded-full text-[10px] font-medium bg-green-100 text-green-700">Verified</span>
+                      ) : (
+                        <span className="px-2 py-1 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700">Pending</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3.5 text-xs text-gray-500 font-mono">{c.license_number || '—'}</td>
                     <td className="px-4 py-3.5 text-xs text-gray-500 max-w-[140px] truncate">{c.address || '—'}</td>
                     <td className="px-4 py-3.5 text-xs text-gray-500">{formatDate(c.created_at)}</td>
                     <td className="px-4 py-3.5">
-                      <button onClick={() => setSelected(c)} className="p-1.5 text-gray-400 hover:text-[#2D6A4F] rounded-md transition-colors">
+                      <button onClick={() => handleSelectCustomer(c)} className="p-1.5 text-gray-400 hover:text-[#2D6A4F] rounded-md transition-colors">
                         <Eye className="w-3.5 h-3.5" />
                       </button>
                     </td>
@@ -123,19 +182,26 @@ export default function CustomersPage() {
       {/* Customer Detail Drawer */}
       {selected && (
         <div className="fixed inset-0 bg-black/40 z-50 flex justify-end">
-          <div className="bg-white w-full max-w-sm h-full overflow-y-auto shadow-2xl">
+          <div className="bg-white w-full max-w-sm h-full overflow-y-auto shadow-2xl flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-800">Customer Details</h2>
-              <button onClick={() => setSelected(null)}><X className="w-5 h-5 text-gray-400 hover:text-gray-600" /></button>
+              <button onClick={() => handleSelectCustomer(null)}><X className="w-5 h-5 text-gray-400 hover:text-gray-600" /></button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 flex-1">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-[#2D6A4F]/10 flex items-center justify-center text-2xl font-bold text-[#2D6A4F]">
                   {(selected.name || '?').charAt(0)}
                 </div>
                 <div>
                   <div className="font-bold text-gray-900">{selected.name}</div>
-                  <div className="text-xs text-gray-400">Customer #{selected.id}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-gray-400">ID #{selected.id}</span>
+                    {selected.is_verified ? (
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-green-100 text-green-700">VERIFIED</span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-yellow-100 text-yellow-700">PENDING</span>
+                    )}
+                  </div>
                 </div>
               </div>
               {[
@@ -150,6 +216,51 @@ export default function CustomersPage() {
                   <span className="text-xs font-medium text-gray-700 text-right max-w-[180px]">{val}</span>
                 </div>
               ))}
+
+              {/* Documents Section */}
+              <div className="pt-4">
+                <h3 className="text-xs font-semibold text-gray-800 mb-3 uppercase tracking-wider">Verification Documents</h3>
+                {loadingDocs ? (
+                  <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-[#2D6A4F]" /></div>
+                ) : documents.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {documents.map(doc => (
+                      <div key={doc.id} className="relative group rounded-md overflow-hidden border border-gray-200">
+                        <a href={`http://localhost:8000/storage/${doc.file_path}`} target="_blank" rel="noreferrer">
+                          <img src={`http://localhost:8000/storage/${doc.file_path}`} alt={doc.document_type} className="w-full h-24 object-cover" />
+                        </a>
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-2 py-1 text-center">
+                          {doc.document_type.replace('_', ' ').toUpperCase()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-md border border-gray-100 text-center">No documents uploaded.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50 space-y-3">
+              {!selected.is_verified && (
+                <button 
+                  onClick={handleVerify}
+                  disabled={verifying || deleting}
+                  className="w-full bg-[#2D6A4F] text-white py-3 rounded-md text-sm font-medium hover:bg-[#1b4332] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                >
+                  {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify Customer'}
+                </button>
+              )}
+              
+              <button 
+                onClick={handleDelete}
+                disabled={deleting || verifying}
+                className="w-full bg-red-50 text-red-600 border border-red-100 py-3 rounded-md text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                Remove Customer
+              </button>
             </div>
           </div>
         </div>

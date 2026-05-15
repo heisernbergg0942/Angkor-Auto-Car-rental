@@ -42,6 +42,10 @@ class BookingController extends Controller
             return response()->json(['message' => 'Customer profile not found'], 404);
         }
 
+        if (!$customer->is_verified) {
+            return response()->json(['message' => 'Your account must be verified before making a booking. Please wait for admin approval.'], 403);
+        }
+
         // Check vehicle availability
         $vehicle = Vehicle::findOrFail($request->vehicle_id);
         if ($vehicle->status !== 'available') {

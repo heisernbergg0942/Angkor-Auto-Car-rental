@@ -48,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Customer self-service ─────────────────────────────────────────────
     Route::get('/my-profile',  [CustomerController::class, 'myProfile']);
     Route::get('/my-bookings', [BookingController::class,  'myBookings']);
+    Route::post('/my-documents', [CustomerController::class, 'uploadMyDocument']);
 
     // Customers can create bookings & view their own
     Route::post('/bookings',     [BookingController::class, 'store']);
@@ -125,6 +126,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Bookings — admin can delete
         Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
+
+        // Customer — admin can delete
+        Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
 
         // User management (staff & admins)
         Route::get('/users',          [UserController::class, 'index']);
