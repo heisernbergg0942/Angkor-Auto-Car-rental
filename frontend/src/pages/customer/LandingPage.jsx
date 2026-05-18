@@ -104,7 +104,7 @@ export default function LandingPage() {
               onClick={() => navigate('/browse')}
               className="bg-[#2D6A4F] text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#1B4332] transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 active:scale-95"
             >
-              Browse Our Fleet
+              Browse Our Cars
             </button>
           </div>
         </div>
