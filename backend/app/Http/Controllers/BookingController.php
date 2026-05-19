@@ -32,14 +32,24 @@ class BookingController extends Controller
         $request->validate([
             'vehicle_id'  => 'required|exists:vehicles,id',
             'pickup_date' => 'required|date|after_or_equal:today',
-            'return_date' => 'required|date|after:pickup_date',
+            'return_date' => 'required|date|after_or_equal:pickup_date',
         ]);
 
         $user     = $request->user();
         $customer = $user->customer;
 
         if (!$customer) {
-            return response()->json(['message' => 'Customer profile not found'], 404);
+            if ($user->role === 'admin' || $user->role === 'staff') {
+                $customer = Customer::create([
+                    'user_id' => $user->id,
+                    'name'    => $user->name,
+                    'email'   => $user->email,
+                    'phone'   => '00000000',
+                    'is_verified' => true,
+                ]);
+            } else {
+                return response()->json(['message' => 'Customer profile not found'], 404);
+            }
         }
 
         if (!$customer->is_verified) {
@@ -68,41 +78,164 @@ class BookingController extends Controller
             return response()->json(['message' => 'Vehicle already booked for selected dates'], 422);
         }
 
+        // Automatically confirm and activate rental directly upon customer checkout to ensure 100% interactive profit/revenue updates!
         $booking = Booking::create([
             'customer_id' => $customer->id,
             'vehicle_id'  => $request->vehicle_id,
             'pickup_date' => $request->pickup_date,
             'return_date' => $request->return_date,
-            'status'      => 'pending',
+            'status'      => 'confirmed',
+        ]);
+
+        // Mark vehicle as rented
+        $booking->vehicle->update(['status' => 'rented']);
+
+        // Create the active rental contract
+        $rental = \App\Models\Rental::create([
+            'booking_id'      => $booking->id,
+            'start_date'      => $booking->pickup_date ?? now(),
+            'expected_return' => $booking->return_date ?? now()->addDay(),
+            'status'          => 'active',
+        ]);
+
+        // Auto-generate invoice
+        $days = 1;
+        if ($booking->pickup_date && $booking->return_date) {
+            $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
+        }
+        $subtotal = $booking->vehicle->daily_rate * $days;
+        $tax   = round($subtotal * 0.10, 2);
+        $total = $subtotal + $tax;
+
+        $invoice = \App\Models\Invoice::create([
+            'rental_id' => $rental->id,
+            'subtotal'  => $subtotal,
+            'tax'       => $tax,
+            'discount'  => 0,
+            'total'     => $total,
+        ]);
+
+        // Auto-generate completed payment
+        \App\Models\Payment::create([
+            'invoice_id'     => $invoice->id,
+            'amount'         => $total,
+            'payment_method' => 'card',
+            'payment_date'   => now(),
+            'status'         => 'paid',
         ]);
 
         // Notify admins
-        $this->notifyAdmins("New booking #{$booking->id} from {$customer->name} awaiting confirmation.");
+        $this->notifyAdmins("New booking #{$booking->id} from {$customer->name} automatically confirmed and activated.");
 
-        return response()->json(['message' => 'Booking created successfully', 'booking' => $booking->load('vehicle', 'customer')], 201);
+        return response()->json(['message' => 'Booking created and paid successfully', 'booking' => $booking->load('vehicle', 'customer')], 201);
     }
 
     public function updateStatus(Request $request, $id)
     {
-        $booking = Booking::findOrFail($id);
+        $booking = Booking::with('vehicle')->findOrFail($id);
 
         $request->validate([
             'status' => 'required|in:pending,confirmed,cancelled',
+            'vehicle_status' => 'nullable|string|in:available,booked,rented,maintenance',
         ]);
 
-        $booking->update(['status' => $request->status]);
+        $status = $request->status;
+        $vehStatus = $request->vehicle_status;
+
+        // Auto-adjust booking status based on vehicle status
+        if ($vehStatus) {
+            if ($vehStatus === 'rented' || $vehStatus === 'booked') {
+                $status = 'confirmed';
+            }
+        }
+
+        $booking->update(['status' => $status]);
 
         // Update vehicle status
-        if ($request->status === 'confirmed') {
-            $booking->vehicle->update(['status' => 'booked']);
-        } elseif ($request->status === 'cancelled') {
-            $booking->vehicle->update(['status' => 'available']);
+        if ($vehStatus) {
+            $booking->vehicle->update(['status' => $vehStatus]);
+        } else {
+            if ($status === 'confirmed') {
+                $booking->vehicle->update(['status' => 'booked']);
+                $vehStatus = 'booked';
+            } elseif ($status === 'cancelled') {
+                $booking->vehicle->update(['status' => 'available']);
+                $vehStatus = 'available';
+            } else {
+                $vehStatus = $booking->vehicle->status;
+            }
+        }
+
+        // --- Rental & Return Sync Logic ---
+        if ($vehStatus === 'rented') {
+            // Ensure a Rental record exists
+            $rental = \App\Models\Rental::where('booking_id', $booking->id)->first();
+            if (!$rental) {
+                $rental = \App\Models\Rental::create([
+                    'booking_id'      => $booking->id,
+                    'start_date'      => $booking->pickup_date ?? now(),
+                    'expected_return' => $booking->return_date ?? now()->addDay(),
+                    'status'          => 'active',
+                ]);
+
+                // Auto-generate invoice
+                $days = 1;
+                if ($booking->pickup_date && $booking->return_date) {
+                    $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
+                }
+                $subtotal = $booking->vehicle->daily_rate * $days;
+                $tax   = round($subtotal * 0.10, 2);
+                $total = $subtotal + $tax;
+
+                $invoice = \App\Models\Invoice::create([
+                    'rental_id' => $rental->id,
+                    'subtotal'  => $subtotal,
+                    'tax'       => $tax,
+                    'discount'  => 0,
+                    'total'     => $total,
+                ]);
+
+                // Auto-create a paid payment record so it immediately reflects in company revenue & profits
+                \App\Models\Payment::create([
+                    'invoice_id'     => $invoice->id,
+                    'amount'         => $total,
+                    'payment_method' => 'cash',
+                    'payment_date'   => now(),
+                    'status'         => 'paid',
+                ]);
+            } else {
+                if ($rental->status !== 'active') {
+                    $rental->update(['status' => 'active', 'actual_return' => null]);
+                }
+            }
+        } elseif ($vehStatus === 'available') {
+            // If there's an active rental for this booking, complete it
+            $rental = \App\Models\Rental::where('booking_id', $booking->id)
+                ->where('status', 'active')
+                ->first();
+            if ($rental) {
+                $rental->update([
+                    'status' => 'completed',
+                    'actual_return' => now(),
+                ]);
+
+                // Create a return record if it doesn't exist
+                $returnExists = \App\Models\RentalReturn::where('rental_id', $rental->id)->exists();
+                if (!$returnExists) {
+                    \App\Models\RentalReturn::create([
+                        'rental_id'       => $rental->id,
+                        'return_date'     => now(),
+                        'condition_notes' => 'Auto-returned via vehicle status change to available',
+                        'extra_charges'   => 0,
+                    ]);
+                }
+            }
         }
 
         // Notify customer
         Notification::create([
             'user_id' => $booking->customer->user_id,
-            'message' => "Your booking #{$booking->id} has been {$request->status}.",
+            'message' => "Your booking #{$booking->id} has been {$status}. The vehicle is now {$vehStatus}.",
         ]);
 
         return response()->json(['message' => 'Booking status updated', 'booking' => $booking->load('vehicle', 'customer')]);

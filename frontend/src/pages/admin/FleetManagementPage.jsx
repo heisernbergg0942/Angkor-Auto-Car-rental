@@ -13,6 +13,7 @@ const STATUS_STYLES = {
 const EMPTY_FORM = { brand: '', model: '', year: '', color: '', plate_number: '', daily_rate: '', status: 'available', description: '' };
 
 export default function FleetManagementPage() {
+  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
   const [vehicles,     setVehicles]     = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState('');
@@ -54,8 +55,7 @@ export default function FleetManagementPage() {
     setEditing(v);
     setForm({ brand: v.brand, model: v.model, year: v.year, color: v.color, plate_number: v.plate_number, daily_rate: v.daily_rate, status: v.status, description: v.description || '' });
     setImageFile(null);
-    const base = import.meta.env.VITE_API_URL?.replace('/api', '');
-    setImagePreview(v.image ? `${base}/storage/${v.image}` : null);
+    setImagePreview(v.image ? `${baseUrl}/storage/${v.image}` : null);
     setShowModal(true);
   };
 
@@ -170,7 +170,7 @@ export default function FleetManagementPage() {
                         <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
                           {v.image ? (
                             <img
-                              src={`${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${v.image}`}
+                              src={`${baseUrl}/storage/${v.image}`}
                               alt={`${v.brand} ${v.model}`}
                               className="w-full h-full object-cover"
                             />

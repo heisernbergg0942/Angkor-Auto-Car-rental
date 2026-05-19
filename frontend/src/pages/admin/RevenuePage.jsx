@@ -1,10 +1,13 @@
-import { TrendingUp, DollarSign, ArrowUpRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { 
+  TrendingUp, DollarSign, ArrowUpRight, Check, X, Edit2, Loader2, Calendar, AlertCircle 
+} from 'lucide-react';
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { revenueData } from '../../data/mockData';
+import { revenueAPI } from '../../services/api';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload?.length) {
@@ -24,28 +27,116 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function RevenuePage() {
-  const totalRevenue = revenueData.reduce((s, d) => s + d.revenue, 0);
-  const avgRevenue = Math.round(totalRevenue / revenueData.length);
-  const lastMonth = revenueData[revenueData.length - 1];
-  const growth = (((lastMonth.revenue - revenueData[revenueData.length - 2].revenue) / revenueData[revenueData.length - 2].revenue) * 100).toFixed(1);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [savingTarget, setSavingTarget] = useState(false);
+  const [error, setError] = useState('');
+  
+  // Inline edit state
+  const [editingMonth, setEditingMonth] = useState(null);
+  const [editTargetValue, setEditTargetValue] = useState('');
+
+  useEffect(() => {
+    fetchStats();
+  }, [year]);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    try {
+      const res = await revenueAPI.stats({ year });
+      setData(res.data);
+      setError('');
+    } catch (err) {
+      setError('Failed to load revenue data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveTarget = async (monthNum) => {
+    if (!editTargetValue || isNaN(editTargetValue) || Number(editTargetValue) < 0) {
+      alert('Please enter a valid target amount.');
+      return;
+    }
+    setSavingTarget(true);
+    try {
+      await revenueAPI.updateTarget({
+        year,
+        month: monthNum,
+        target_amount: parseFloat(editTargetValue)
+      });
+      setEditingMonth(null);
+      // Re-fetch statistics to sync both the chart and table
+      const res = await revenueAPI.stats({ year });
+      setData(res.data);
+    } catch (err) {
+      alert('Failed to update revenue target.');
+    } finally {
+      setSavingTarget(false);
+    }
+  };
+
+  if (loading && !data) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[500px]">
+          <Loader2 className="w-8 h-8 animate-spin text-[#2D6A4F]" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  const s = data?.summary || {};
+  const revenueList = data?.revenue_data || [];
 
   return (
     <AdminLayout>
       <div className="p-6 animate-fadeIn">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Revenue</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Financial overview and monthly performance.</p>
+        {/* Header */}
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Revenue</h1>
+            <p className="text-slate-500 text-sm mt-0.5">Financial overview and monthly performance.</p>
+          </div>
+          
+          {/* Year Filter */}
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-slate-400" />
+            <select
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+              className="text-xs text-slate-600 border border-slate-200 rounded-lg px-3 py-1.5 cursor-pointer bg-white focus:outline-none focus:ring-1 focus:ring-[#2D6A4F] transition-all"
+            >
+              {[2024, 2025, 2026, 2027].map(y => (
+                <option key={y} value={y}>{y} Fiscal Year</option>
+              ))}
+            </select>
+          </div>
         </div>
+
+        {error && (
+          <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+            <button onClick={fetchStats} className="ml-auto underline text-xs font-semibold">Try Again</button>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="card p-5">
+          <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Current Month</div>
-                <div className="text-3xl font-bold text-slate-800">${lastMonth.revenue.toLocaleString()}</div>
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  Current Month ({s.current_month || '—'})
+                </div>
+                <div className="text-3xl font-bold text-slate-800">
+                  ${(s.current_revenue ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
                 <div className="inline-flex items-center gap-1 mt-2 bg-emerald-100 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full">
-                  <TrendingUp className="w-3 h-3" />+{growth}%
+                  <TrendingUp className="w-3 h-3" />
+                  {s.growth >= 0 ? '+' : ''}{s.growth}% MoM
                 </div>
               </div>
               <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
@@ -53,82 +144,148 @@ export default function RevenuePage() {
               </div>
             </div>
           </div>
-          <div className="card p-5">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">6-Month Total</div>
-            <div className="text-3xl font-bold text-slate-800">${totalRevenue.toLocaleString()}</div>
-            <div className="text-xs text-slate-500 mt-2">Jan – {lastMonth.month} 2023</div>
+          
+          <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              Annual Total ({year})
+            </div>
+            <div className="text-3xl font-bold text-slate-800">
+              ${(s.total_revenue ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className="text-xs text-slate-500 mt-2.5">
+              Accumulated earnings for the fiscal year
+            </div>
           </div>
-          <div className="card p-5">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Monthly Average</div>
-            <div className="text-3xl font-bold text-slate-800">${avgRevenue.toLocaleString()}</div>
-            <div className="text-xs text-slate-500 mt-2">Based on 6 months</div>
+          
+          <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              Monthly Average
+            </div>
+            <div className="text-3xl font-bold text-slate-800">
+              ${(s.avg_revenue ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className="text-xs text-slate-500 mt-2.5">
+              Consistent monthly standard performance
+            </div>
           </div>
         </div>
 
         {/* Area Chart */}
-        <div className="card p-5 mb-5">
-          <div className="font-bold text-slate-800 mb-4">Revenue vs Target</div>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={revenueData}>
-              <defs>
-                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2D6A4F" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#2D6A4F" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorTarget" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.1} />
-                  <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
-              <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#2D6A4F" strokeWidth={2.5} fill="url(#colorRevenue)" dot={{ fill: '#2D6A4F', r: 4 }} />
-              <Area type="monotone" dataKey="target" name="Target" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" fill="url(#colorTarget)" dot={{ fill: '#94a3b8', r: 3 }} />
-            </AreaChart>
-          </ResponsiveContainer>
+        <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm mb-5">
+          <div className="font-bold text-slate-800 mb-4">Revenue vs Target ({year})</div>
+          {loading ? (
+            <div className="flex items-center justify-center h-72">
+              <Loader2 className="w-6 h-6 animate-spin text-[#2D6A4F]" />
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={revenueList}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2D6A4F" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#2D6A4F" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorTarget" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#2D6A4F" strokeWidth={2.5} fill="url(#colorRevenue)" dot={{ fill: '#2D6A4F', r: 4 }} />
+                <Area type="monotone" dataKey="target" name="Target" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" fill="url(#colorTarget)" dot={{ fill: '#94a3b8', r: 3 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* Monthly Breakdown */}
-        <div className="card p-5">
+        <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
           <div className="font-bold text-slate-800 mb-4">Monthly Breakdown</div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="border-b border-slate-100">
                 <tr>
-                  <th className="table-header">Month</th>
-                  <th className="table-header">Revenue</th>
-                  <th className="table-header">Target</th>
-                  <th className="table-header">Achievement</th>
-                  <th className="table-header">Growth</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Month</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Revenue</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Target</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Achievement</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Growth</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {revenueData.map((d, i) => {
-                  const achievement = Math.round((d.revenue / d.target) * 100);
-                  const prev = revenueData[i - 1];
-                  const growth = prev ? (((d.revenue - prev.revenue) / prev.revenue) * 100).toFixed(1) : null;
+                {revenueList.map((d, i) => {
+                  const achievement = d.target > 0 ? Math.round((d.revenue / d.target) * 100) : 0;
+                  const prev = revenueList[i - 1];
+                  const growth = prev && prev.revenue > 0 ? (((d.revenue - prev.revenue) / prev.revenue) * 100).toFixed(1) : null;
+                  
                   return (
-                    <tr key={d.month} className="hover:bg-slate-50/50">
-                      <td className="table-cell font-medium text-slate-700">{d.month} 2023</td>
-                      <td className="table-cell font-bold text-slate-800">${d.revenue.toLocaleString()}</td>
-                      <td className="table-cell text-slate-500">${d.target.toLocaleString()}</td>
-                      <td className="table-cell">
+                    <tr key={d.month} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700">{d.month} {year}</td>
+                      <td className="px-4 py-3.5 text-xs font-bold text-slate-800">${d.revenue.toLocaleString()}</td>
+                      
+                      {/* Target Cell (with Inline Editor) */}
+                      <td className="px-4 py-3.5 text-xs text-slate-600">
+                        {editingMonth === d.month_num ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-400">$</span>
+                            <input
+                              type="number"
+                              disabled={savingTarget}
+                              value={editTargetValue}
+                              onChange={e => setEditTargetValue(e.target.value)}
+                              className="w-24 px-2 py-1 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-[#2D6A4F]"
+                              autoFocus
+                            />
+                            <button 
+                              onClick={() => handleSaveTarget(d.month_num)} 
+                              disabled={savingTarget}
+                              className="p-1 bg-[#2D6A4F] text-white rounded hover:bg-[#1B4332] disabled:opacity-50"
+                            >
+                              {savingTarget ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                            </button>
+                            <button 
+                              onClick={() => setEditingMonth(null)} 
+                              disabled={savingTarget}
+                              className="p-1 bg-slate-100 text-slate-500 rounded hover:bg-slate-200"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between group max-w-[120px]">
+                            <span className="font-medium">${d.target.toLocaleString()}</span>
+                            <button
+                              onClick={() => { setEditingMonth(d.month_num); setEditTargetValue(d.target); }}
+                              className="p-1 text-slate-400 hover:text-[#2D6A4F] opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                              title="Edit target goal"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                      
+                      <td className="px-4 py-3.5 text-xs">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[100px]">
                             <div
-                              className={`h-full rounded-full ${achievement >= 100 ? 'bg-emerald-500' : achievement >= 80 ? 'bg-amber-500' : 'bg-red-400'}`}
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                achievement >= 100 ? 'bg-emerald-500' : achievement >= 80 ? 'bg-amber-500' : 'bg-red-400'
+                              }`}
                               style={{ width: `${Math.min(achievement, 100)}%` }}
                             />
                           </div>
-                          <span className="text-xs font-medium text-slate-600 w-10">{achievement}%</span>
+                          <span className="text-xs font-semibold text-slate-600 w-10">{achievement}%</span>
                         </div>
                       </td>
-                      <td className="table-cell">
+                      
+                      <td className="px-4 py-3.5 text-xs">
                         {growth && (
-                          <span className={`inline-flex items-center gap-1 text-xs font-medium ${Number(growth) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                          <span className={`inline-flex items-center gap-1 text-xs font-semibold ${Number(growth) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                             <ArrowUpRight className={`w-3 h-3 ${Number(growth) < 0 ? 'rotate-180' : ''}`} />
                             {Number(growth) >= 0 ? '+' : ''}{growth}%
                           </span>

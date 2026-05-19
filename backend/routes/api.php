@@ -14,6 +14,7 @@ use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RevenueController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +72,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Dashboard stats
         Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+
+        // Revenue stats & targets
+        Route::get('/revenue/stats',    [RevenueController::class, 'stats']);
+        Route::post('/revenue/targets', [RevenueController::class, 'updateTarget']);
 
         // Customers management
         Route::get('/customers',                  [CustomerController::class, 'index']);

@@ -61,7 +61,7 @@ export const bookingAPI = {
   list:         (params) => api.get('/bookings', { params }),
   get:          (id)     => api.get(`/bookings/${id}`),
   create:       (data)   => api.post('/bookings', data),
-  updateStatus: (id, status) => api.put(`/bookings/${id}/status`, { status }),
+  updateStatus: (id, status, vehicleStatus) => api.put(`/bookings/${id}/status`, { status, vehicle_status: vehicleStatus }),
   delete:       (id)     => api.delete(`/bookings/${id}`),
   myBookings:   (params) => api.get('/my-bookings', { params }),
 };
@@ -143,6 +143,12 @@ export const userAPI = {
 // ── Dashboard ─────────────────────────────────────────────────────────────
 export const dashboardAPI = {
   stats: () => api.get('/dashboard/stats'),
+};
+
+// ── Revenue ───────────────────────────────────────────────────────────────
+export const revenueAPI = {
+  stats:  (params) => api.get('/revenue/stats', { params }),
+  updateTarget: (data) => api.post('/revenue/targets', data),
 };
 
 export default api;

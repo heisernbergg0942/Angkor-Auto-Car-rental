@@ -39,12 +39,20 @@ export default function RentalsPage() {
     return matchSearch && matchStatus;
   });
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status, vehicleStatus) => {
     setUpdating(id);
     try {
-      await bookingAPI.updateStatus(id, status);
-      setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
-      if (selected?.id === id) setSelected(prev => ({ ...prev, status }));
+      await bookingAPI.updateStatus(id, status, vehicleStatus);
+      setBookings(prev => prev.map(b => b.id === id ? {
+        ...b,
+        status,
+        vehicle: b.vehicle ? { ...b.vehicle, status: vehicleStatus || (status === 'confirmed' ? 'booked' : 'available') } : null
+      } : b));
+      if (selected?.id === id) setSelected(prev => ({
+        ...prev,
+        status,
+        vehicle: prev.vehicle ? { ...prev.vehicle, status: vehicleStatus || (status === 'confirmed' ? 'booked' : 'available') } : null
+      }));
     } catch { setError('Status update failed.'); }
     finally   { setUpdating(null); }
   };
@@ -196,6 +204,31 @@ export default function RentalsPage() {
 
               {/* Details */}
               <div className="space-y-3">
+                {/* Vehicle Status Control */}
+                <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-4">
+                  <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mb-2">Update Vehicle Status</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs text-gray-500">Current Status:</span>
+                    <span className="text-xs font-bold capitalize px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">{selected.vehicle?.status || '—'}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {['available', 'booked', 'rented', 'maintenance'].map((vStatus) => (
+                      <button
+                        key={vStatus}
+                        onClick={() => updateStatus(selected.id, selected.status, vStatus)}
+                        disabled={updating === selected.id}
+                        className={`px-2 py-1.5 rounded text-[11px] font-semibold capitalize border transition-all text-center ${
+                          selected.vehicle?.status === vStatus
+                            ? 'bg-[#2D6A4F] text-white border-[#2D6A4F] shadow-sm'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {vStatus}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Customer</div>
                   <div className="text-sm font-semibold text-gray-800">{selected.customer?.name}</div>

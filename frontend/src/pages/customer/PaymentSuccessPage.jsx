@@ -19,9 +19,19 @@ export default function PaymentSuccessPage() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Booking Submitted!</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          {booking?.status === 'confirmed' || booking?.status === 'rented' ? 'Booking Confirmed!' : 'Booking Submitted!'}
+        </h1>
         <p className="text-gray-500 text-sm mb-8 leading-relaxed">
-          Your booking request has been submitted and is <span className="font-semibold text-amber-600">pending confirmation</span> by our staff. You'll be notified once confirmed.
+          {booking?.status === 'confirmed' || booking?.status === 'rented' ? (
+            <span>
+              Your payment was processed successfully. Your booking is now <span className="font-semibold text-emerald-600">confirmed and active</span>!
+            </span>
+          ) : (
+            <span>
+              Your booking request has been submitted and is <span className="font-semibold text-amber-600">pending confirmation</span> by our staff. You'll be notified once confirmed.
+            </span>
+          )}
         </p>
 
         {/* Booking Summary */}
@@ -46,7 +56,9 @@ export default function PaymentSuccessPage() {
                 <Clock className="w-4 h-4 text-[#2D6A4F] shrink-0" />
                 <span>
                   <span className="font-medium">Status: </span>
-                  <span className="capitalize text-amber-600 font-semibold">{booking.status}</span>
+                  <span className={`capitalize font-semibold ${
+                    booking.status === 'confirmed' || booking.status === 'rented' ? 'text-emerald-600' : 'text-amber-600'
+                  }`}>{booking.status}</span>
                 </span>
               </div>
             </>

@@ -12,7 +12,7 @@ import {
 // Load Stripe with your publishable key from .env
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-// ÔöÇÔöÇÔöÇ Card Element Style ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+// Card Element Style
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
@@ -29,7 +29,7 @@ const CARD_ELEMENT_OPTIONS = {
   },
 };
 
-// ÔöÇÔöÇÔöÇ Booking details (would come from router state / context in real app) ÔöÇÔöÇÔöÇÔöÇÔöÇ
+// Booking details (would come from router state / context in real app) 
 const BOOKING = {
   vehicle: '2024 Tesla Model S Plaid',
   image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
@@ -41,7 +41,7 @@ const BOOKING = {
 };
 const TOTAL = BOOKING.rentalCost + BOOKING.insurance + BOOKING.taxes;
 
-// ÔöÇÔöÇÔöÇ Inner checkout form (needs Stripe context) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+// Inner checkout form (needs Stripe context)
 function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
@@ -59,7 +59,7 @@ function CheckoutForm() {
     setErrorMsg('');
 
     try {
-      // 1. Ask your Laravel backend to create a PaymentIntent
+      
       const res = await fetch('/api/payment/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -70,7 +70,7 @@ function CheckoutForm() {
         }),
       });
 
-      // ÔöÇÔöÇ DEMO MODE: if backend isn't running yet, simulate success ÔöÇÔöÇ
+     
       if (!res.ok) {
         console.warn('Backend not running ÔÇö simulating payment for demo.');
         setTimeout(() => navigate('/payment-success'), 1500);
@@ -79,7 +79,7 @@ function CheckoutForm() {
 
       const { clientSecret } = await res.json();
 
-      // 2. Confirm the card payment with Stripe
+      
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: elements.getElement(CardElement),
@@ -94,7 +94,7 @@ function CheckoutForm() {
         navigate('/payment-success');
       }
     } catch (err) {
-      // Backend not connected ÔÇö simulate for demo/testing
+     
       console.warn('Network error ÔÇö simulating payment for demo.');
       setTimeout(() => navigate('/payment-success'), 1500);
     }
@@ -173,7 +173,7 @@ function CheckoutForm() {
   );
 }
 
-// ÔöÇÔöÇÔöÇ Page wrapper ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+// 
 export default function CheckoutPage() {
   const navigate = useNavigate();
 
