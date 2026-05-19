@@ -49,7 +49,15 @@ Make sure you have Node.js, PHP (>= 8.2), Composer, and PostgreSQL installed.
 
 ---
 
-### 1. Backend Installation & Setup
+### 1. Frontend Installation & Setup
+```bash
+# 1. Navigate to frontend directory
+
+cd frontend
+
+### 2. frontend Installation & Setup
+
+npm run dev
 
 Open your terminal and navigate to the backend folder to set up the Laravel API:
 
@@ -58,10 +66,16 @@ Open your terminal and navigate to the backend folder to set up the Laravel API:
 cd backend
 
 # 2. Install PHP dependencies
-composer install
+composer install or composer update (for diffrent version of php)
 
 # 3. Create your environment configuration file
 cp .env.example .env
 
 # 4. Generate application key
 php artisan key:generate
+
+# 5. Run database migrations and seeders
+php artisan migrate
+
+# 6. Start the local API server
+php artisan serve
