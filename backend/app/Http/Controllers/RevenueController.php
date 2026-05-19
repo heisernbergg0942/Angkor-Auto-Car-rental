@@ -65,16 +65,63 @@ class RevenueController extends Controller
             $growth = 100.0; // 100% growth from 0
         }
 
+        // Fetch recent payments with related invoices, rentals, bookings, customers, vehicles
+        $recentPayments = Payment::with('invoice.rental.booking.customer', 'invoice.rental.booking.vehicle')
+            ->where('status', 'paid')
+            ->whereYear('payment_date', $year)
+            ->latest('payment_date')
+            ->take(10)
+            ->get();
+
+        $paymentsList = [];
+        foreach ($recentPayments as $payment) {
+            $desc = 'Rental Charge';
+            $bookingId = null;
+            $customerName = 'Customer';
+            $vehicleName = 'Vehicle';
+
+            if ($payment->invoice) {
+                if ($payment->invoice->type === 'damage') {
+                    $desc = 'Damage Repair Fee (' . ($payment->invoice->description ?? 'Accident repair') . ')';
+                }
+                
+                if ($payment->invoice->rental && $payment->invoice->rental->booking) {
+                    $booking = $payment->invoice->rental->booking;
+                    $bookingId = $booking->id;
+                    if ($booking->customer) {
+                        $customerName = $booking->customer->name;
+                    }
+                    if ($booking->vehicle) {
+                        $vehicleName = $booking->vehicle->brand . ' ' . $booking->vehicle->model;
+                    }
+                }
+            }
+
+            $date = $payment->payment_date ? Carbon::parse($payment->payment_date) : Carbon::parse($payment->created_at);
+
+            $paymentsList[] = [
+                'id'             => $payment->id,
+                'amount'         => (float) $payment->amount,
+                'payment_method' => $payment->payment_method,
+                'payment_date'   => $date->toIso8601String(),
+                'description'    => $desc,
+                'booking_id'     => $bookingId,
+                'customer_name'  => $customerName,
+                'vehicle_name'   => $vehicleName,
+            ];
+        }
+
         return response()->json([
-            'year'          => $year,
-            'summary'       => [
+            'year'            => $year,
+            'summary'         => [
                 'current_month'   => self::MONTH_NAMES[$currentMonth],
                 'current_revenue' => round($currentRevenue, 2),
                 'growth'          => $growth,
                 'total_revenue'   => round($totalRevenue, 2),
                 'avg_revenue'     => $avgRevenue,
             ],
-            'revenue_data'  => $revenueData,
+            'revenue_data'    => $revenueData,
+            'recent_payments' => $paymentsList,
         ]);
     }
 

@@ -30,6 +30,11 @@ class Rental extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function return()
     {
         return $this->hasOne(RentalReturn::class, 'rental_id');

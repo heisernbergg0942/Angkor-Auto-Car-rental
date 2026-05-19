@@ -23,7 +23,7 @@ class BookingController extends Controller
 
     public function show($id)
     {
-        $booking = Booking::with('customer.user', 'vehicle', 'rental.invoice.payments', 'rental.return')->findOrFail($id);
+        $booking = Booking::with('customer.user', 'vehicle', 'rental.invoices.payments', 'rental.invoice.payments', 'rental.return')->findOrFail($id);
         return response()->json($booking);
     }
 
@@ -258,7 +258,7 @@ class BookingController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $bookings = Booking::with('vehicle', 'rental.invoice')
+        $bookings = Booking::with('vehicle', 'rental.invoices.payments', 'rental.invoice')
             ->where('customer_id', $customer->id)
             ->latest()
             ->paginate(10);

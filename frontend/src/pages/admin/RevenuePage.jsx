@@ -202,100 +202,136 @@ export default function RevenuePage() {
           )}
         </div>
 
-        {/* Monthly Breakdown */}
-        <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
-          <div className="font-bold text-slate-800 mb-4">Monthly Breakdown</div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-slate-100">
-                <tr>
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Month</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Revenue</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Target</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Achievement</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Growth</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {revenueList.map((d, i) => {
-                  const achievement = d.target > 0 ? Math.round((d.revenue / d.target) * 100) : 0;
-                  const prev = revenueList[i - 1];
-                  const growth = prev && prev.revenue > 0 ? (((d.revenue - prev.revenue) / prev.revenue) * 100).toFixed(1) : null;
-                  
-                  return (
-                    <tr key={d.month} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700">{d.month} {year}</td>
-                      <td className="px-4 py-3.5 text-xs font-bold text-slate-800">${d.revenue.toLocaleString()}</td>
-                      
-                      {/* Target Cell (with Inline Editor) */}
-                      <td className="px-4 py-3.5 text-xs text-slate-600">
-                        {editingMonth === d.month_num ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-slate-400">$</span>
-                            <input
-                              type="number"
-                              disabled={savingTarget}
-                              value={editTargetValue}
-                              onChange={e => setEditTargetValue(e.target.value)}
-                              className="w-24 px-2 py-1 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-[#2D6A4F]"
-                              autoFocus
-                            />
-                            <button 
-                              onClick={() => handleSaveTarget(d.month_num)} 
-                              disabled={savingTarget}
-                              className="p-1 bg-[#2D6A4F] text-white rounded hover:bg-[#1B4332] disabled:opacity-50"
-                            >
-                              {savingTarget ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                            </button>
-                            <button 
-                              onClick={() => setEditingMonth(null)} 
-                              disabled={savingTarget}
-                              className="p-1 bg-slate-100 text-slate-500 rounded hover:bg-slate-200"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
+        {/* Grid for Monthly Breakdown & Recent Payments */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Monthly Breakdown Table */}
+          <div className="lg:col-span-2 bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
+            <div className="font-bold text-slate-800 mb-4">Monthly Breakdown</div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b border-slate-100">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Month</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Revenue</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Target</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Achievement</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Growth</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {revenueList.map((d, i) => {
+                    const achievement = d.target > 0 ? Math.round((d.revenue / d.target) * 100) : 0;
+                    const prev = revenueList[i - 1];
+                    const growth = prev && prev.revenue > 0 ? (((d.revenue - prev.revenue) / prev.revenue) * 100).toFixed(1) : null;
+                    
+                    return (
+                      <tr key={d.month} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-4 py-3.5 text-xs font-semibold text-slate-700">{d.month} {year}</td>
+                        <td className="px-4 py-3.5 text-xs font-bold text-slate-800">${d.revenue.toLocaleString()}</td>
+                        
+                        {/* Target Cell (with Inline Editor) */}
+                        <td className="px-4 py-3.5 text-xs text-slate-600">
+                          {editingMonth === d.month_num ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-slate-400">$</span>
+                              <input
+                                type="number"
+                                disabled={savingTarget}
+                                value={editTargetValue}
+                                onChange={e => setEditTargetValue(e.target.value)}
+                                className="w-24 px-2 py-1 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-[#2D6A4F]"
+                                autoFocus
+                              />
+                              <button 
+                                onClick={() => handleSaveTarget(d.month_num)} 
+                                disabled={savingTarget}
+                                className="p-1 bg-[#2D6A4F] text-white rounded hover:bg-[#1B4332] disabled:opacity-50"
+                              >
+                                {savingTarget ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                              </button>
+                              <button 
+                                onClick={() => setEditingMonth(null)} 
+                                disabled={savingTarget}
+                                className="p-1 bg-slate-100 text-slate-500 rounded hover:bg-slate-200"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between group max-w-[120px]">
+                              <span className="font-medium">${d.target.toLocaleString()}</span>
+                              <button
+                                onClick={() => { setEditingMonth(d.month_num); setEditTargetValue(d.target); }}
+                                className="p-1 text-slate-400 hover:text-[#2D6A4F] opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                                title="Edit target goal"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        
+                        <td className="px-4 py-3.5 text-xs">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[100px]">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  achievement >= 100 ? 'bg-emerald-500' : achievement >= 80 ? 'bg-amber-500' : 'bg-red-400'
+                                }`}
+                                style={{ width: `${Math.min(achievement, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-600 w-10">{achievement}%</span>
                           </div>
-                        ) : (
-                          <div className="flex items-center justify-between group max-w-[120px]">
-                            <span className="font-medium">${d.target.toLocaleString()}</span>
-                            <button
-                              onClick={() => { setEditingMonth(d.month_num); setEditTargetValue(d.target); }}
-                              className="p-1 text-slate-400 hover:text-[#2D6A4F] opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                              title="Edit target goal"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                      
-                      <td className="px-4 py-3.5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[100px]">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                achievement >= 100 ? 'bg-emerald-500' : achievement >= 80 ? 'bg-amber-500' : 'bg-red-400'
-                              }`}
-                              style={{ width: `${Math.min(achievement, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-xs font-semibold text-slate-600 w-10">{achievement}%</span>
-                        </div>
-                      </td>
-                      
-                      <td className="px-4 py-3.5 text-xs">
-                        {growth && (
-                          <span className={`inline-flex items-center gap-1 text-xs font-semibold ${Number(growth) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                            <ArrowUpRight className={`w-3 h-3 ${Number(growth) < 0 ? 'rotate-180' : ''}`} />
-                            {Number(growth) >= 0 ? '+' : ''}{growth}%
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        
+                        <td className="px-4 py-3.5 text-xs">
+                          {growth && (
+                            <span className={`inline-flex items-center gap-1 text-xs font-semibold ${Number(growth) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                              <ArrowUpRight className={`w-3 h-3 ${Number(growth) < 0 ? 'rotate-180' : ''}`} />
+                              {Number(growth) >= 0 ? '+' : ''}{growth}%
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Real-time Recent Payments Log */}
+          <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm flex flex-col">
+            <div className="font-bold text-slate-800 mb-1">Recent Payments Log</div>
+            <p className="text-[10px] text-slate-400 mb-4">Settled invoices and transaction history.</p>
+            
+            <div className="space-y-4 overflow-y-auto max-h-[380px] pr-1 flex-1">
+              {(data?.recent_payments || []).map((pay) => (
+                <div key={pay.id} className="flex items-start justify-between text-xs border-b border-slate-50 pb-3 last:border-0 last:pb-0 hover:bg-slate-50/20 transition-colors">
+                  <div className="space-y-1">
+                    <div className="font-semibold text-slate-700 leading-snug">{pay.description}</div>
+                    <div className="text-[10px] text-slate-400">
+                      Booking #{pay.booking_id} · {pay.customer_name}
+                    </div>
+                    <div className="text-[9px] font-mono text-[#2D6A4F] bg-emerald-50 px-1.5 py-0.5 rounded inline-block uppercase tracking-wider font-bold">
+                      {pay.payment_method}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="font-bold text-emerald-600 text-sm font-mono">+${pay.amount.toFixed(2)}</span>
+                    <div className="text-[9px] text-slate-400 mt-1 font-medium">
+                      {new Date(pay.payment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {new Date(pay.payment_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(data?.recent_payments || []).length === 0 && (
+                <div className="text-center py-16 text-slate-400 text-xs">
+                  No settled payments found.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

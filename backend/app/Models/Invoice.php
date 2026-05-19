@@ -12,6 +12,8 @@ class Invoice extends Model
         'tax',
         'discount',
         'total',
+        'type',
+        'description',
     ];
 
     public function rental()

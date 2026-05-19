@@ -58,6 +58,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Any authenticated user can view their invoice
     Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
 
+    // Settle invoice payment (accessible to customers for damage invoices & bookings)
+    Route::post('/payments', [PaymentController::class, 'store']);
+
     // Stripe payment intent
     Route::post('/payment/create-intent', [PaymentController::class, 'createIntent']);
 
@@ -95,12 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/rentals/{id}', [RentalController::class, 'update']);
 
         // Invoices
-        Route::post('/invoices',     [InvoiceController::class, 'store']);
-        Route::put('/invoices/{id}', [InvoiceController::class, 'update']);
+        Route::post('/invoices',        [InvoiceController::class, 'store']);
+        Route::put('/invoices/{id}',     [InvoiceController::class, 'update']);
+        Route::delete('/invoices/{id}',  [InvoiceController::class, 'destroy']);
 
         // Payments
         Route::get('/payments',  [PaymentController::class, 'index']);
-        Route::post('/payments', [PaymentController::class, 'store']);
 
         // Returns
         Route::post('/returns',     [ReturnController::class, 'store']);
