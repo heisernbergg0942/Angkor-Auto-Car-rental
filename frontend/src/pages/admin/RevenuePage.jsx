@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  TrendingUp, DollarSign, ArrowUpRight, Check, X, Edit2, Loader2, Calendar, AlertCircle 
+  TrendingUp, DollarSign, ArrowUpRight, Check, X, Edit2, Loader2, Calendar, AlertCircle, RefreshCcw 
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -39,6 +39,8 @@ export default function RevenuePage() {
 
   useEffect(() => {
     fetchStats();
+    const interval = setInterval(fetchStats, 60000); // refresh every 60 seconds
+    return () => clearInterval(interval);
   }, [year]);
 
   const fetchStats = async () => {
@@ -112,6 +114,14 @@ export default function RevenuePage() {
                 <option key={y} value={y}>{y} Fiscal Year</option>
               ))}
             </select>
+            {/* Refresh button */}
+            <button
+              onClick={fetchStats}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-[#2D6A4F] text-white rounded hover:bg-[#1B4332] transition-colors"
+              title="Refresh revenue data"
+            >
+              <RefreshCcw className="w-3 h-3" /> Refresh
+            </button>
           </div>
         </div>
 

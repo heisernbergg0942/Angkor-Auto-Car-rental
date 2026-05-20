@@ -7,6 +7,9 @@ use App\Models\Customer;
 use App\Models\Vehicle;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use App\Models\Rental;
+use App\Models\Invoice;
+use App\Models\Payment;
 
 class BookingController extends Controller
 {
@@ -120,10 +123,74 @@ class BookingController extends Controller
         // Update vehicle status
         if ($vehStatus) {
             $booking->vehicle->update(['status' => $vehStatus]);
+            // When a booking is confirmed via vehicle status, also create payment record
+            if ($status === 'confirmed') {
+                // Create a rental record if it does not exist
+                $rental = \App\Models\Rental::firstOrCreate([
+                    'booking_id' => $booking->id,
+                ], [
+                    'start_date' => $booking->pickup_date ?? now(),
+                    'expected_return' => $booking->return_date ?? now()->addDay(),
+                    'status' => 'active',
+                ]);
+                // Generate invoice and immediate paid payment
+                $days = 1;
+                if ($booking->pickup_date && $booking->return_date) {
+                    $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
+                }
+                $subtotal = $booking->vehicle->daily_rate * $days;
+                $tax = round($subtotal * 0.10, 2);
+                $total = $subtotal + $tax;
+                $invoice = \App\Models\Invoice::create([
+                    'rental_id' => $rental->id,
+                    'subtotal' => $subtotal,
+                    'tax' => $tax,
+                    'discount' => 0,
+                    'total' => $total,
+                ]);
+                \App\Models\Payment::create([
+                    'invoice_id' => $invoice->id,
+                    'amount' => $total,
+                    'payment_method' => 'cash',
+                    'payment_date' => now(),
+                    'status' => 'paid',
+                ]);
+            }
         } else {
             if ($status === 'confirmed') {
                 $booking->vehicle->update(['status' => 'booked']);
                 $vehStatus = 'booked';
+                // When a booking is confirmed without explicit vehicle status, create a payment record to reflect revenue
+                // Create a rental record if it does not exist
+                $rental = \App\Models\Rental::firstOrCreate([
+                    'booking_id' => $booking->id,
+                ], [
+                    'start_date' => $booking->pickup_date ?? now(),
+                    'expected_return' => $booking->return_date ?? now()->addDay(),
+                    'status' => 'active',
+                ]);
+                // Generate invoice and immediate paid payment
+                $days = 1;
+                if ($booking->pickup_date && $booking->return_date) {
+                    $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
+                }
+                $subtotal = $booking->vehicle->daily_rate * $days;
+                $tax = round($subtotal * 0.10, 2);
+                $total = $subtotal + $tax;
+                $invoice = \App\Models\Invoice::create([
+                    'rental_id' => $rental->id,
+                    'subtotal' => $subtotal,
+                    'tax' => $tax,
+                    'discount' => 0,
+                    'total' => $total,
+                ]);
+                \App\Models\Payment::create([
+                    'invoice_id' => $invoice->id,
+                    'amount' => $total,
+                    'payment_method' => 'cash',
+                    'payment_date' => now(),
+                    'status' => 'paid',
+                ]);
             } elseif ($status === 'cancelled') {
                 $booking->vehicle->update(['status' => 'available']);
                 $vehStatus = 'available';
