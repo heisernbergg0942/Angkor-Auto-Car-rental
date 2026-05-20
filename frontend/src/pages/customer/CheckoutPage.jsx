@@ -149,18 +149,24 @@ function CheckoutForm({ bookingData, total, onPaymentSuccess }) {
         <p className="text-xs text-blue-600 mb-4 leading-relaxed">
           Click below to confirm your booking immediately. The admin will review and approve it.
         </p>
-        <button
-          type="button"
-          onClick={handleConfirmWithoutPayment}
-          disabled={isProcessing}
-          className="w-full bg-[#2D6A4F] hover:bg-[#245c43] text-white py-3.5 rounded-md font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {isProcessing ? (
-            <><Loader2 className="animate-spin w-4 h-4" /> Processing...</>
-          ) : (
-            'Confirm Booking →'
-          )}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleConfirmWithoutPayment}
+            disabled={isProcessing}
+            className="flex-1 bg-[#2D6A4F] hover:bg-[#245c43] text-white py-3.5 rounded-md font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isProcessing ? (<><Loader2 className="animate-spin w-4 h-4" /> Processing...</>) : 'Confirm Booking →'}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/browse')}
+            disabled={isProcessing}
+            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3.5 rounded-md font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
 
       {/* Divider */}

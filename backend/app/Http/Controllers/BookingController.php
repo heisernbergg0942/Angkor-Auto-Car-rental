@@ -78,56 +78,22 @@ class BookingController extends Controller
             return response()->json(['message' => 'Vehicle already booked for selected dates'], 422);
         }
 
-        // Automatically confirm and activate rental directly upon customer checkout to ensure 100% interactive profit/revenue updates!
+        // Create the booking in 'pending' status for admin approval
         $booking = Booking::create([
             'customer_id' => $customer->id,
             'vehicle_id'  => $request->vehicle_id,
             'pickup_date' => $request->pickup_date,
             'return_date' => $request->return_date,
-            'status'      => 'confirmed',
+            'status'      => 'pending',
         ]);
 
-        // Mark vehicle as rented
-        $booking->vehicle->update(['status' => 'rented']);
-
-        // Create the active rental contract
-        $rental = \App\Models\Rental::create([
-            'booking_id'      => $booking->id,
-            'start_date'      => $booking->pickup_date ?? now(),
-            'expected_return' => $booking->return_date ?? now()->addDay(),
-            'status'          => 'active',
-        ]);
-
-        // Auto-generate invoice
-        $days = 1;
-        if ($booking->pickup_date && $booking->return_date) {
-            $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
-        }
-        $subtotal = $booking->vehicle->daily_rate * $days;
-        $tax   = round($subtotal * 0.10, 2);
-        $total = $subtotal + $tax;
-
-        $invoice = \App\Models\Invoice::create([
-            'rental_id' => $rental->id,
-            'subtotal'  => $subtotal,
-            'tax'       => $tax,
-            'discount'  => 0,
-            'total'     => $total,
-        ]);
-
-        // Auto-generate completed payment
-        \App\Models\Payment::create([
-            'invoice_id'     => $invoice->id,
-            'amount'         => $total,
-            'payment_method' => 'card',
-            'payment_date'   => now(),
-            'status'         => 'paid',
-        ]);
+        // Mark vehicle as booked (so others can't book it while it's pending)
+        $booking->vehicle->update(['status' => 'booked']);
 
         // Notify admins
-        $this->notifyAdmins("New booking #{$booking->id} from {$customer->name} automatically confirmed and activated.");
+        $this->notifyAdmins("New booking request #{$booking->id} from {$customer->name} is awaiting approval.");
 
-        return response()->json(['message' => 'Booking created and paid successfully', 'booking' => $booking->load('vehicle', 'customer')], 201);
+        return response()->json(['message' => 'Booking request submitted successfully. Please wait for admin approval.', 'booking' => $booking->load('vehicle', 'customer')], 201);
     }
 
     public function updateStatus(Request $request, $id)
