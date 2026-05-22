@@ -103,8 +103,8 @@ export default function FleetManagementPage() {
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">Fleet Management</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Manage all vehicles in your fleet.</p>
+            <h1 className="text-xl font-bold text-gray-800">Vechicles Management</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Manage all vehicles in your System.</p>
           </div>
           <button onClick={openAdd} className="flex items-center gap-1.5 bg-[#2D6A4F] text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-[#1B4332] transition-colors">
             <Plus className="w-3.5 h-3.5" /> Add Vehicle

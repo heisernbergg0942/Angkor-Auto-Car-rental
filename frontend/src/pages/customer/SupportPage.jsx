@@ -146,7 +146,7 @@ export default function SupportPage() {
         <section className="max-w-screen-lg mx-auto px-6 pb-20">
           <div className="bg-[#EBECEB] rounded-2xl overflow-hidden flex flex-col md:flex-row relative">
             <div className="p-10 md:p-14 flex-1">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">About Modern Fleet</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">About Angkor Auto</h2>
               <p className="text-sm text-gray-600 leading-relaxed mb-4">
                 Our mission is to provide premium fleet management solutions for the modern professional. We are dedicated to reliability, innovation, and exceptional service, ensuring your mobility needs are met with precision and care.
               </p>

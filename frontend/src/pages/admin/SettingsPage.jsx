@@ -48,7 +48,7 @@ export default function SettingsPage() {
       <div className="p-6 animate-fadeIn">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-800">System Settings</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Configure your fleet management platform.</p>
+          <p className="text-slate-500 text-sm mt-0.5">Configure your Car management platform.</p>
         </div>
 
         <div className="max-w-2xl space-y-6">

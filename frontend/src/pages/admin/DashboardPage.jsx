@@ -196,7 +196,7 @@ export default function DashboardPage() {
         {/* Vehicle Status Summary */}
         <div className="bg-white border border-gray-100 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="font-semibold text-gray-800 text-sm">Fleet Status</div>
+            <div className="font-semibold text-gray-800 text-sm">Vehicle Status</div>
             <a href="/admin/fleet" className="text-[11px] font-semibold text-[#2D6A4F] hover:underline">View All Vehicles</a>
           </div>
           {loading ? (

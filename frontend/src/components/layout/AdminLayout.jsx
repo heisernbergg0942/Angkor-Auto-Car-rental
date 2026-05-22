@@ -9,7 +9,7 @@ import { notificationAPI } from '../../services/api';
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/fleet', label: 'View Cars', icon: Car },
+  { to: '/admin/fleet', label: 'Manage Vehicle', icon: Car },
   { to: '/admin/rentals', label: 'Manage Booking', icon: BookOpen },
   { to: '/admin/customers', label: 'Customer Data', icon: Users },
   { to: '/admin/revenue', label: 'Revenue', icon: DollarSign },
