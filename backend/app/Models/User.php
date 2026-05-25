@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -31,6 +32,23 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
         ];
+    }
+
+    /**
+     * Override the default password reset URL so that the link in the email
+     * points to the React frontend (FRONTEND_URL) instead of the Laravel backend.
+     * Works on both localhost (http://localhost:5173) and production (https://yourdomain.com).
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:5173')), '/');
+        $resetUrl    = $frontendUrl . '/reset-password'
+                     . '?token=' . $token
+                     . '&email=' . urlencode($this->email);
+
+        ResetPasswordNotification::createUrlUsing(fn () => $resetUrl);
+
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     public function customer()

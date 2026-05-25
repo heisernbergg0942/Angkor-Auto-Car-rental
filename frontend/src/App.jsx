@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage          from './pages/customer/LoginPage';
 import RegisterPage       from './pages/customer/RegisterPage';
 import ForgotPasswordPage from './pages/customer/ForgotPasswordPage';
+import ResetPasswordPage  from './pages/customer/ResetPasswordPage';
 import LandingPage        from './pages/customer/LandingPage';
 import FleetPage          from './pages/customer/FleetPage';
 import VehicleDetailPage  from './pages/customer/VehicleDetailPage';
@@ -32,6 +33,7 @@ function App() {
           <Route path="/login"            element={<LoginPage />} />
           <Route path="/register"         element={<RegisterPage />} />
           <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
+          <Route path="/reset-password"   element={<ResetPasswordPage />} />
           <Route path="/browse"           element={<FleetPage />} />
           <Route path="/browse/:id"       element={<VehicleDetailPage />} />
           <Route path="/support"          element={<SupportPage />} />

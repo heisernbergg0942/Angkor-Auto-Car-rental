@@ -121,7 +121,7 @@ export default function FleetManagementPage() {
         {/* Summary Cards */}
         <div className="grid grid-cols-4 gap-4 mb-5">
           {[
-            { label: 'Total Fleet',  value: counts.total,       color: 'text-gray-800' },
+            { label: 'Total Cars',  value: counts.total,       color: 'text-gray-800' },
             { label: 'Available',    value: counts.available,   color: 'text-emerald-600' },
             { label: 'Rented',       value: counts.rented,      color: 'text-purple-600' },
             { label: 'Maintenance',  value: counts.maintenance, color: 'text-amber-600' },

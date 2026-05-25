@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Car, Key, DollarSign, Wrench, Users,
-  AlertTriangle, UserPlus, CheckCircle, Calendar,
-  CreditCard, Loader2, Clock
+  Car, Key, DollarSign, Users,
+  AlertTriangle, Calendar,
+  Loader2, Mail, ExternalLink, RefreshCw
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -47,22 +48,39 @@ const StatCard = ({ label, value, icon: Icon, sub, subColor = 'text-emerald-600'
 );
 
 export default function DashboardPage() {
-  const [stats,    setStats]    = useState(null);
-  const [loading,  setLoading]  = useState(true);
-  const [chartRange, setChartRange] = useState('Last 30 Days');
+  const [stats,        setStats]        = useState(null);
+  const [loading,      setLoading]      = useState(true);
+  const [chartRange,   setChartRange]   = useState('Last 30 Days');
+  const [mailLogs,     setMailLogs]     = useState([]);
+  const [mailLoading,  setMailLoading]  = useState(false);
+  const [mailExpanded, setMailExpanded] = useState(false);
 
-  useEffect(() => { fetchStats(); }, []);
-
-  const fetchStats = async () => {
-    setLoading(true);
+  const fetchStats = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const { data } = await dashboardAPI.stats();
       setStats(data);
     } catch (err) {
       console.error('Dashboard stats failed', err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    fetchMailLogs();
+    const interval = setInterval(() => fetchStats(true), 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchMailLogs = async () => {
+    setMailLoading(true);
+    try {
+      const { data } = await dashboardAPI.mailLogs();
+      setMailLogs(data);
+    } catch { /* silent */ }
+    finally { setMailLoading(false); }
   };
 
   const s = stats?.summary || {};
@@ -99,13 +117,18 @@ export default function DashboardPage() {
             <h1 className="text-xl font-bold text-gray-800">Dashboard Overview</h1>
             <p className="text-xs text-gray-400 mt-0.5">Live metrics and daily operational snapshot.</p>
           </div>
-          <div className="flex items-center gap-3 text-[11px] text-gray-400">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Live Data
-            </span>
-            <span>|</span>
-            <button onClick={fetchStats} className="hover:text-gray-600 transition-colors">↻ Refresh</button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 text-[11px] text-gray-400 border-r border-gray-100 pr-4 py-1">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Data
+              </span>
+              <span>|</span>
+              <button onClick={() => fetchStats()} className="hover:text-gray-600 transition-colors">↻ Refresh</button>
+            </div>
+            <Link to="/" className="flex items-center gap-1.5 bg-[#2D6A4F] text-white text-[11px] font-semibold px-3 py-2 rounded-md hover:bg-[#1B4332] transition-colors shadow-sm">
+              <Car className="w-3.5 h-3.5" /> Browse Vehicles (Customer View)
+            </Link>
           </div>
         </div>
 
@@ -194,7 +217,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Vehicle Status Summary */}
-        <div className="bg-white border border-gray-100 rounded-xl p-4">
+        <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <div className="font-semibold text-gray-800 text-sm">Vehicle Status</div>
             <a href="/admin/fleet" className="text-[11px] font-semibold text-[#2D6A4F] hover:underline">View All Vehicles</a>
@@ -222,6 +245,76 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Email Sandbox — Dev Testing Widget */}
+        <div className="bg-white border border-gray-100 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center">
+                <Mail className="w-3.5 h-3.5 text-violet-500" />
+              </div>
+              <div>
+                <div className="font-semibold text-gray-800 text-sm">Email Sandbox</div>
+                <div className="text-[10px] text-gray-400">Captured outgoing emails (local dev only)</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={fetchMailLogs}
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
+                title="Refresh mail logs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${mailLoading ? 'animate-spin' : ''}`} />
+              </button>
+              <button
+                onClick={() => setMailExpanded(p => !p)}
+                className="text-[10px] font-semibold text-violet-500 hover:text-violet-700 transition-colors"
+              >
+                {mailExpanded ? 'Hide' : 'Show'} Emails
+              </button>
+            </div>
+          </div>
+
+          {mailExpanded && (
+            <div className="mt-3">
+              {mailLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+                </div>
+              ) : mailLogs.length === 0 ? (
+                <div className="text-center py-6 text-gray-300 text-xs">
+                  <Mail className="w-6 h-6 mx-auto mb-2 opacity-40" />
+                  No emails captured yet. Try the Forgot Password flow.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {mailLogs.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between gap-3 bg-violet-50 border border-violet-100 rounded-lg px-3 py-2.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
+                          <Mail className="w-3 h-3 text-violet-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold text-gray-700 truncate">Reset Password</div>
+                          <div className="text-[10px] text-gray-400 truncate">To: {item.email}</div>
+                        </div>
+                      </div>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 shrink-0 bg-violet-500 hover:bg-violet-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md transition-colors"
+                      >
+                        Open Link <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
       </div>
     </AdminLayout>
   );

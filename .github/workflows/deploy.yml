@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .github/workflows/deploy.yml
+# GitHub Actions: Auto-deploy to DigitalOcean Droplet on push to main
+# ─────────────────────────────────────────────────────────────────────────────
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout code ───────────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. SSH into Droplet and run deploy script ──────────────────────────
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:        ${{ secrets.DO_HOST }}         # Droplet IP address
+          username:    ${{ secrets.DO_USERNAME }}     # e.g. root
+          key:         ${{ secrets.DO_SSH_KEY }}      # Private SSH key
+          port:        22
+          script: |
+            cd /var/www/angkor-auto
+            git pull origin main
+            docker compose build --no-cache
+            docker compose up -d --remove-orphans
+            docker compose exec -T app php artisan migrate --force
+            docker compose exec -T app php artisan config:cache
+            docker compose exec -T app php artisan route:cache
+            docker compose exec -T app php artisan view:cache
+            docker compose exec -T app php artisan cache:clear
+            echo "✅ Deployment finished!"

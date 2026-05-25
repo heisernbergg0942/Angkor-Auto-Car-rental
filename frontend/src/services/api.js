@@ -143,7 +143,8 @@ export const userAPI = {
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
 export const dashboardAPI = {
-  stats: () => api.get('/dashboard/stats'),
+  stats:    () => api.get('/dashboard/stats'),
+  mailLogs: () => api.get('/dashboard/mail-logs'),
 };
 
 // ── Revenue ───────────────────────────────────────────────────────────────

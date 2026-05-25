@@ -1,6 +1,15 @@
 node_modules/
 .env
+.env.*
+!.env.example
 /backend/vendor/
 /backend/.env
+/backend/.env.production
 /frontend/node_modules/
 .DS_Store
+
+# Docker volumes
+docker/volumes/
+
+# macOS
+__MACOSX/
