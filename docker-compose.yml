@@ -98,36 +98,36 @@ services:
   # Optional Self-Hosted PostgreSQL Database
   # (Uncomment this block to run the database inside Docker)
   # ─────────────────────────────────────────────────
-certbot:
-  image: certbot/certbot
-  container_name: angkor_certbot
-  restart: unless-stopped
-  volumes:
-    - ./certs:/etc/letsencrypt:rw
-    - ./certbot:/var/www/certbot:rw
-  entrypoint: ["/bin/sh","-c","while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot --deploy-hook 'docker compose restart nginx' || true; done"]
-  networks:
-    - angkor_net
+  certbot:
+    image: certbot/certbot
+    container_name: angkor_certbot
+    restart: unless-stopped
+    volumes:
+      - ./certs:/etc/letsencrypt:rw
+      - ./certbot:/var/www/certbot:rw
+    entrypoint: ["/bin/sh","-c","while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot --deploy-hook 'docker compose restart nginx' || true; done"]
+    networks:
+      - angkor_net
 
-db:
-  image: postgres:16-alpine
-  container_name: angkor_db
-  restart: unless-stopped
-  environment:
-    POSTGRES_DB: ${DB_DATABASE:-angkor_db}
-    POSTGRES_USER: ${DB_USERNAME:-angkor_user}
-    POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePassword123!}
-  volumes:
-    - pg_data:/var/lib/postgresql/data
-  networks:
-    - angkor_net
-  ports:
-    - "5432:5432"
-  healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-angkor_user} -d ${DB_DATABASE:-angkor_db}"]
-    interval: 5s
-    timeout: 5s
-    retries: 5
+  db:
+    image: postgres:16-alpine
+    container_name: angkor_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-angkor_db}
+      POSTGRES_USER: ${DB_USERNAME:-angkor_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePassword123!}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - angkor_net
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-angkor_user} -d ${DB_DATABASE:-angkor_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 # ─────────────────────────────────────────────────
 # Named Volumes
