@@ -13,9 +13,13 @@ COPY package.json package-lock.json ./
 RUN npm ci --prefer-offline
 
 # Copy source and build
-# VITE_API_URL is injected at build time via --build-arg
+# Build-time args injected via --build-arg
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
+
+# Stripe publishable key (build-time) - use test key for HTTP/dev
+ARG VITE_STRIPE_PUBLISHABLE_KEY=pk_test_TYooMQauvdEDq54NiTphI7jx
+ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
 
 COPY . .
 RUN npm run build
