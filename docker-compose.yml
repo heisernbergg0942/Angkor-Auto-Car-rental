@@ -51,7 +51,9 @@ services:
       dockerfile: Dockerfile
       args:
         # Points to the backend Nginx — update with your domain/IP in production
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        # Use a relative API path so the browser hits the same host serving the frontend.
+        # This avoids `localhost` being used inside users' browsers.
+        VITE_API_URL: ${VITE_API_URL:-/api}
     container_name: angkor_frontend
     restart: unless-stopped
     networks:
