@@ -23,8 +23,8 @@ services:
     depends_on:
       - redis
       # Uncomment the next two lines if using the self-hosted db container below:
-      # db:
-      #   condition: service_healthy
+      db:
+        condition: service_healthy
 
   # ─────────────────────────────────────────────────
   # Nginx — Backend API Server (port 8080 internally)
@@ -96,25 +96,25 @@ services:
   # Optional Self-Hosted PostgreSQL Database
   # (Uncomment this block to run the database inside Docker)
   # ─────────────────────────────────────────────────
-  # db:
-  #   image: postgres:16-alpine
-  #   container_name: angkor_db
-  #   restart: unless-stopped
-  #   environment:
-  #     POSTGRES_DB: ${DB_DATABASE:-defaultdb}
-  #     POSTGRES_USER: ${DB_USERNAME:-doadmin}
-  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-your_strong_database_password}
-  #   volumes:
-  #     - pg_data:/var/lib/postgresql/data
-  #   networks:
-  #     - angkor_net
-  #   ports:
-  #     - "5432:5432"
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-doadmin} -d ${DB_DATABASE:-defaultdb}"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 5
+  db:
+    image: postgres:16-alpine
+    container_name: angkor_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-angkor_db}
+      POSTGRES_USER: ${DB_USERNAME:-angkor_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePassword123!}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - angkor_net
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-angkor_user} -d ${DB_DATABASE:-angkor_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 # ─────────────────────────────────────────────────
 # Named Volumes
@@ -124,7 +124,7 @@ volumes:
   storage_logs:
   redis_data:
   # Uncomment if using self-hosted db
-  # pg_data:
+  pg_data:
 
 # ─────────────────────────────────────────────────
 # Networks

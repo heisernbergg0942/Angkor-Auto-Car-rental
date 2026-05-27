@@ -7,7 +7,7 @@
 set -e  # Exit immediately if any command fails
 
 PROJECT_DIR="/var/www/angkor-auto"
-REPO_URL="https://github.com/YOUR_USERNAME/YOUR_REPO.git"   # ← Update with your repo URL
+REPO_URL="https://github.com/heisernbergg0942/Angkor-Auto-Car-rental.git"   # Automatically updated
 
 echo "🚀 Starting Angkor Auto Car Rental deployment..."
 
