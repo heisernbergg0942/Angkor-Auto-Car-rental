@@ -22,9 +22,7 @@ services:
       - angkor_net
     depends_on:
       - redis
-      # Uncomment the next two lines if using the self-hosted db container below:
-      db:
-        condition: service_healthy
+      - db
 
   # ─────────────────────────────────────────────────
   # Nginx — Backend API Server (port 8080 internally)
