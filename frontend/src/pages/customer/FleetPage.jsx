@@ -16,7 +16,7 @@ export default function FleetPage() {
   const [search, setSearch]       = useState(searchParams.get('q') || '');
   const [statusFilter, setStatusFilter] = useState('available');
 
-  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
+  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : '';
 
   useEffect(() => {
     fetchVehicles();

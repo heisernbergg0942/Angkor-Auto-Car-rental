@@ -247,7 +247,7 @@ export default function CheckoutPage() {
     : '—';
 
   const imgSrc = vehicle.image
-    ? `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000'}/storage/${vehicle.image}`
+    ? `${import.meta.env.VITE_API_URL?.replace('/api', '') || ''}/storage/${vehicle.image}`
     : null;
 
   // If no booking data, redirect back

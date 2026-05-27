@@ -226,8 +226,8 @@ export default function CustomersPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {documents.map(doc => (
                       <div key={doc.id} className="relative group rounded-md overflow-hidden border border-gray-200">
-                        <a href={`http://localhost:8000/storage/${doc.file_path}`} target="_blank" rel="noreferrer">
-                          <img src={`http://localhost:8000/storage/${doc.file_path}`} alt={doc.document_type} className="w-full h-24 object-cover" />
+                        <a href={`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : ''}/storage/${doc.file_path}`} target="_blank" rel="noreferrer">
+                          <img src={`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : ''}/storage/${doc.file_path}`} alt={doc.document_type} className="w-full h-24 object-cover" />
                         </a>
                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-2 py-1 text-center">
                           {doc.document_type.replace('_', ' ').toUpperCase()}

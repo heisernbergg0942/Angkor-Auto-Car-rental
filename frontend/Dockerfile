@@ -14,7 +14,7 @@ RUN npm ci --prefer-offline
 
 # Copy source and build
 # VITE_API_URL is injected at build time via --build-arg
-ARG VITE_API_URL=http://localhost/api
+ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 
 COPY . .
