@@ -1,0 +1,19 @@
+[2026-05-27 06:05:39] production.ERROR: The [pcntl] extension is required to run Pail. {"exception":"[object] (RuntimeException(code: 0): The [pcntl] extension is required to run Pail. at C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/pail/src/Guards/EnsurePcntlIsAvailable.php:15)
+[stacktrace]
+#0 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/pail/src/Console/Commands/PailCommand.php(46): Laravel/Pail/Guards/EnsurePcntlIsAvailable::check()
+#1 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel/Pail/Console/Commands/PailCommand->handle()
+#2 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::{closure:Illuminate/Container/BoundMethod::call():35}()
+#3 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate/Container/Util::unwrapIfClosure()
+#4 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod()
+#5 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate/Container/BoundMethod::call()
+#6 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate/Container/Container->call()
+#7 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute()
+#8 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony/Component/Console/Command/Command->run()
+#9 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/symfony/console/Application.php(1117): Illuminate/Console/Command->run()
+#10 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand()
+#11 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun()
+#12 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run()
+#13 C:/Users/devqii/Downloads/angkor/angkor/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate/Foundation/Console/Kernel->handle()
+#14 C:/Users/devqii/Downloads/angkor/angkor/backend/artisan(16): Illuminate/Foundation/Application->handleCommand()
+#15 {main}
+"} 
