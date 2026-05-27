@@ -12,8 +12,8 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $customers = Customer::with('user', 'documents')
-            ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%")
-                ->orWhere('email', 'like', "%{$request->search}%"))
+            ->when($request->search, fn($q) => $q->where(fn($sub) => $sub->where('name', 'like', "%{$request->search}%")
+                ->orWhere('email', 'like', "%{$request->search}%")))
             ->paginate(15);
 
         return response()->json($customers);

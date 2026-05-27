@@ -133,28 +133,33 @@ class BookingController extends Controller
                     'expected_return' => $booking->return_date ?? now()->addDay(),
                     'status' => 'active',
                 ]);
-                // Generate invoice and immediate paid payment
-                $days = 1;
-                if ($booking->pickup_date && $booking->return_date) {
-                    $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
+                // Generate invoice and immediate paid payment if one does not already exist
+                $existingInvoice = \App\Models\Invoice::where('rental_id', $rental->id)
+                    ->where('type', 'rental')
+                    ->first();
+                if (!$existingInvoice) {
+                    $days = 1;
+                    if ($booking->pickup_date && $booking->return_date) {
+                        $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
+                    }
+                    $subtotal = $booking->vehicle->daily_rate * $days;
+                    $tax = round($subtotal * 0.10, 2);
+                    $total = $subtotal + $tax;
+                    $invoice = \App\Models\Invoice::create([
+                        'rental_id' => $rental->id,
+                        'subtotal' => $subtotal,
+                        'tax' => $tax,
+                        'discount' => 0,
+                        'total' => $total,
+                    ]);
+                    \App\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'amount' => $total,
+                        'payment_method' => 'cash',
+                        'payment_date' => now(),
+                        'status' => 'paid',
+                    ]);
                 }
-                $subtotal = $booking->vehicle->daily_rate * $days;
-                $tax = round($subtotal * 0.10, 2);
-                $total = $subtotal + $tax;
-                $invoice = \App\Models\Invoice::create([
-                    'rental_id' => $rental->id,
-                    'subtotal' => $subtotal,
-                    'tax' => $tax,
-                    'discount' => 0,
-                    'total' => $total,
-                ]);
-                \App\Models\Payment::create([
-                    'invoice_id' => $invoice->id,
-                    'amount' => $total,
-                    'payment_method' => 'cash',
-                    'payment_date' => now(),
-                    'status' => 'paid',
-                ]);
             }
         } else {
             if ($status === 'confirmed') {
@@ -169,28 +174,33 @@ class BookingController extends Controller
                     'expected_return' => $booking->return_date ?? now()->addDay(),
                     'status' => 'active',
                 ]);
-                // Generate invoice and immediate paid payment
-                $days = 1;
-                if ($booking->pickup_date && $booking->return_date) {
-                    $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
+                // Generate invoice and immediate paid payment if one does not already exist
+                $existingInvoice = \App\Models\Invoice::where('rental_id', $rental->id)
+                    ->where('type', 'rental')
+                    ->first();
+                if (!$existingInvoice) {
+                    $days = 1;
+                    if ($booking->pickup_date && $booking->return_date) {
+                        $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
+                    }
+                    $subtotal = $booking->vehicle->daily_rate * $days;
+                    $tax = round($subtotal * 0.10, 2);
+                    $total = $subtotal + $tax;
+                    $invoice = \App\Models\Invoice::create([
+                        'rental_id' => $rental->id,
+                        'subtotal' => $subtotal,
+                        'tax' => $tax,
+                        'discount' => 0,
+                        'total' => $total,
+                    ]);
+                    \App\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'amount' => $total,
+                        'payment_method' => 'cash',
+                        'payment_date' => now(),
+                        'status' => 'paid',
+                    ]);
                 }
-                $subtotal = $booking->vehicle->daily_rate * $days;
-                $tax = round($subtotal * 0.10, 2);
-                $total = $subtotal + $tax;
-                $invoice = \App\Models\Invoice::create([
-                    'rental_id' => $rental->id,
-                    'subtotal' => $subtotal,
-                    'tax' => $tax,
-                    'discount' => 0,
-                    'total' => $total,
-                ]);
-                \App\Models\Payment::create([
-                    'invoice_id' => $invoice->id,
-                    'amount' => $total,
-                    'payment_method' => 'cash',
-                    'payment_date' => now(),
-                    'status' => 'paid',
-                ]);
             } elseif ($status === 'cancelled') {
                 $booking->vehicle->update(['status' => 'available']);
                 $vehStatus = 'available';
@@ -210,8 +220,17 @@ class BookingController extends Controller
                     'expected_return' => $booking->return_date ?? now()->addDay(),
                     'status'          => 'active',
                 ]);
+            } else {
+                if ($rental->status !== 'active') {
+                    $rental->update(['status' => 'active', 'actual_return' => null]);
+                }
+            }
 
-                // Auto-generate invoice
+            // Only create invoice if one does not already exist for this rental
+            $existingInvoice = \App\Models\Invoice::where('rental_id', $rental->id)
+                ->where('type', 'rental')
+                ->first();
+            if (!$existingInvoice) {
                 $days = 1;
                 if ($booking->pickup_date && $booking->return_date) {
                     $days = \Carbon\Carbon::parse($booking->pickup_date)->diffInDays(\Carbon\Carbon::parse($booking->return_date)) ?: 1;
@@ -236,10 +255,6 @@ class BookingController extends Controller
                     'payment_date'   => now(),
                     'status'         => 'paid',
                 ]);
-            } else {
-                if ($rental->status !== 'active') {
-                    $rental->update(['status' => 'active', 'actual_return' => null]);
-                }
             }
         } elseif ($vehStatus === 'available') {
             // If there's an active rental for this booking, complete it
@@ -255,20 +270,44 @@ class BookingController extends Controller
                 // Create a return record if it doesn't exist
                 $returnExists = \App\Models\RentalReturn::where('rental_id', $rental->id)->exists();
                 if (!$returnExists) {
+                    $expectedReturn = \Carbon\Carbon::parse($rental->expected_return);
+                    $actualReturn = now();
+                    $lateFee = 0;
+                    $notes = 'Auto-returned via vehicle status change to available';
+
+                    if ($actualReturn->gt($expectedReturn)) {
+                        $lateDays = $actualReturn->diffInDays($expectedReturn);
+                        if ($lateDays > 0) {
+                            $dailyRate = $booking->vehicle->daily_rate ?? 0;
+                            $lateFee = $lateDays * $dailyRate * 1.5;
+                            $notes .= ". Delayed by {$lateDays} day(s). Late fee of $" . number_format($lateFee, 2) . " applied (1.5x daily rate).";
+                        }
+                    }
+
                     \App\Models\RentalReturn::create([
                         'rental_id'       => $rental->id,
-                        'return_date'     => now(),
-                        'condition_notes' => 'Auto-returned via vehicle status change to available',
-                        'extra_charges'   => 0,
+                        'return_date'     => $actualReturn,
+                        'condition_notes' => $notes,
+                        'extra_charges'   => $lateFee,
                     ]);
+
+                    // Add late fee to invoice if exists
+                    if ($lateFee > 0 && $rental->invoice) {
+                        $inv = $rental->invoice;
+                        $inv->update([
+                            'subtotal' => $inv->subtotal + $lateFee,
+                            'total'    => $inv->total + $lateFee,
+                        ]);
+                    }
                 }
             }
         }
 
-        // Notify customer
+        // Notify customer — guard against null vehStatus (e.g. when only booking status was changed)
+        $safeVehStatus = $vehStatus ?? $booking->vehicle->status ?? 'unknown';
         Notification::create([
             'user_id' => $booking->customer->user_id,
-            'message' => "Your booking #{$booking->id} has been {$status}. The vehicle is now {$vehStatus}.",
+            'message' => "Your booking #{$booking->id} has been {$status}. The vehicle is now {$safeVehStatus}.",
         ]);
 
         return response()->json(['message' => 'Booking status updated', 'booking' => $booking->load('vehicle', 'customer')]);

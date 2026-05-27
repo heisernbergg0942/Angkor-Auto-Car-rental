@@ -14,11 +14,14 @@ class Maintenance extends Model
         'service_date',
         'cost',
         'next_service_date',
+        'resolved_date',
+        'status',
     ];
 
     protected $casts = [
         'service_date'      => 'date',
         'next_service_date' => 'date',
+        'resolved_date'     => 'date',
     ];
 
     public function vehicle()

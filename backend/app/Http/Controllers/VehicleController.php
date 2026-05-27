@@ -13,9 +13,9 @@ class VehicleController extends Controller
         $vehicles = Vehicle::query()
             ->when($request->status, fn($q) => $q->where('status', $request->status))
             ->when($request->brand,  fn($q) => $q->where('brand', 'like', "%{$request->brand}%"))
-            ->when($request->search, fn($q) => $q->where('brand', 'like', "%{$request->search}%")
+            ->when($request->search, fn($q) => $q->where(fn($sub) => $sub->where('brand', 'like', "%{$request->search}%")
                 ->orWhere('model', 'like', "%{$request->search}%")
-                ->orWhere('plate_number', 'like', "%{$request->search}%"))
+                ->orWhere('plate_number', 'like', "%{$request->search}%")))
             ->paginate(12);
 
         return response()->json($vehicles);

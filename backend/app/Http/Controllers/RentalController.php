@@ -71,26 +71,29 @@ class RentalController extends Controller
         // Mark vehicle as rented
         $booking->vehicle->update(['status' => 'rented']);
 
-        // Auto-generate invoice
-        $days     = \Carbon\Carbon::parse($request->start_date)->diffInDays(\Carbon\Carbon::parse($request->expected_return)) ?: 1;
-        $subtotal = $booking->vehicle->daily_rate * $days;
+        // Auto-generate invoice only if one doesn't already exist for this rental
+        $existingInvoice = Invoice::where('rental_id', $rental->id)->where('type', 'rental')->first();
+        if (!$existingInvoice) {
+            $days     = \Carbon\Carbon::parse($request->start_date)->diffInDays(\Carbon\Carbon::parse($request->expected_return)) ?: 1;
+            $subtotal = $booking->vehicle->daily_rate * $days;
 
-        if ($request->addons) {
-            foreach ($request->addons as $addon) {
-                $subtotal += $addon['price_per_day'] * $addon['qty'] * $days;
+            if ($request->addons) {
+                foreach ($request->addons as $addon) {
+                    $subtotal += $addon['price_per_day'] * $addon['qty'] * $days;
+                }
             }
+
+            $tax   = round($subtotal * 0.10, 2);
+            $total = $subtotal + $tax;
+
+            Invoice::create([
+                'rental_id' => $rental->id,
+                'subtotal'  => $subtotal,
+                'tax'       => $tax,
+                'discount'  => 0,
+                'total'     => $total,
+            ]);
         }
-
-        $tax   = round($subtotal * 0.10, 2);
-        $total = $subtotal + $tax;
-
-        Invoice::create([
-            'rental_id' => $rental->id,
-            'subtotal'  => $subtotal,
-            'tax'       => $tax,
-            'discount'  => 0,
-            'total'     => $total,
-        ]);
 
         return response()->json([
             'message' => 'Rental started and invoice generated',
