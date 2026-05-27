@@ -33,6 +33,12 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
         opcache \
         intl
 
+# Install phpredis (PECL) required by Laravel Redis connector
+RUN apk add --no-cache $PHPIZE_DEPS autoconf openssl-dev && \
+    pecl install redis && \
+    docker-php-ext-enable redis && \
+    apk del $PHPIZE_DEPS
+
 # OPcache tuning for production
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
     echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/opcache.ini && \
