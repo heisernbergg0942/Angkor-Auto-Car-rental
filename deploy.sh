@@ -49,14 +49,14 @@ echo "🐳 Building and starting Docker containers..."
 if [ "${SKIP_BUILD:-0}" = "1" ]; then
   echo "🔁 Skipping image rebuild (SKIP_BUILD=1)"
 else
-  docker compose build --pull
+  docker compose --env-file "$ENV_FILE" build --pull
 fi
-docker compose up -d --remove-orphans
+docker compose --env-file "$ENV_FILE" up -d --remove-orphans
 
 # 5. If a 'db' service exists, wait until it reports healthy (if healthcheck is defined)
-if docker compose ps -q db >/dev/null 2>&1; then
+if docker compose --env-file "$ENV_FILE" ps -q db >/dev/null 2>&1; then
   echo "⏳ Waiting for database service 'db' to become healthy..."
-  DB_CID=$(docker compose ps -q db)
+  DB_CID=$(docker compose --env-file "$ENV_FILE" ps -q db)
   # check if health status is available
   if docker inspect --format='{{json .State.Health}}' "$DB_CID" >/dev/null 2>&1; then
     ATTEMPTS=0
@@ -79,7 +79,7 @@ fi
 
 # Helper to run artisan inside the app container
 artisan() {
-  docker compose exec -T app php artisan "$@"
+  docker compose --env-file "$ENV_FILE" exec -T app php artisan "$@"
 }
 
 # 6. Ensure APP_KEY exists in the env inside container; generate if missing
@@ -87,18 +87,18 @@ echo "🔐 Ensuring APP_KEY is present..."
 if ! grep -q '^APP_KEY=' "$ENV_FILE" || grep -q '^APP_KEY=$' "$ENV_FILE"; then
   echo "APP_KEY is empty in $ENV_FILE — generating inside container..."
   # Try to generate via artisan (writes to .env inside container volume)
-  docker compose exec -T app php artisan key:generate --force || true
+  docker compose --env-file "$ENV_FILE" exec -T app php artisan key:generate --force || true
 fi
 
 echo "⚙️  Running Laravel storage link and migrations..."
-docker compose exec -T app php artisan storage:link || true
-docker compose exec -T app php artisan migrate --force
+docker compose --env-file "$ENV_FILE" exec -T app php artisan storage:link || true
+docker compose --env-file "$ENV_FILE" exec -T app php artisan migrate --force
 
 echo "⚡ Optimizing application cache..."
-docker compose exec -T app php artisan config:cache || true
-docker compose exec -T app php artisan route:cache || true
-docker compose exec -T app php artisan view:cache || true
-docker compose exec -T app php artisan cache:clear || true
+docker compose --env-file "$ENV_FILE" exec -T app php artisan config:cache || true
+docker compose --env-file "$ENV_FILE" exec -T app php artisan route:cache || true
+docker compose --env-file "$ENV_FILE" exec -T app php artisan view:cache || true
+docker compose --env-file "$ENV_FILE" exec -T app php artisan cache:clear || true
 
 echo ""
 echo "✅ Deployment complete!"
