@@ -95,7 +95,7 @@ services:
     volumes:
       - ./certs:/etc/letsencrypt:rw
       - ./certbot:/var/www/certbot:rw
-    entrypoint: ["/bin/sh","-c","while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot --deploy-hook 'docker compose exec nginx nginx -s reload' || true; done"]
+    entrypoint: ["/bin/sh","-c","while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot || true; done"]
     networks:
       - angkor_net
 
