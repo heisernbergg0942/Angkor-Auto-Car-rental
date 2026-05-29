@@ -10,6 +10,7 @@ set -euo pipefail
 
 # Use the script directory as the project root so the script is portable
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
 REPO_URL="https://github.com/heisernbergg0942/Angkor-Auto-Car-rental.git"   # Automatically updated
 
 echo "🚀 Starting Angkor Auto Car Rental deployment in: $PROJECT_DIR"

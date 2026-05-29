@@ -9,7 +9,7 @@ node_modules
 tests
 Dockerfile
 docker-compose.yml
-docker
+
 temp.js
 test_db.php
 test_local_db.php

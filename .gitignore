@@ -16,3 +16,7 @@ __MACOSX/
 
 # Agent IDE files
 .antigravitycli/
+
+# Local testing files
+certs/
+docker-compose.override.yml

@@ -7,4 +7,4 @@ dist-ssr
 .env.*
 !.env.example
 Dockerfile
-docker
+#docker (unignored for build)
