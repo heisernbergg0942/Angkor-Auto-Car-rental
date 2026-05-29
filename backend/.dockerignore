@@ -1,0 +1,15 @@
+.git
+.github
+vendor
+node_modules
+.env
+.env.*
+!.env.example
+.phpunit.result.cache
+tests
+Dockerfile
+docker-compose.yml
+docker
+temp.js
+test_db.php
+test_local_db.php

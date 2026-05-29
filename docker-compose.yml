@@ -1,0 +1,112 @@
+services:
+
+  # ─────────────────────────────────────────────────
+  # Laravel PHP-FPM Application (Backend)
+  # ─────────────────────────────────────────────────
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: angkor_app
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+    env_file:
+      - ./backend/.env.production
+    volumes:
+      - storage_uploads:/var/www/backend/storage/app/public
+      - storage_logs:/var/www/backend/storage/logs
+    networks:
+      - angkor_net
+    depends_on:
+      - redis
+
+  # ─────────────────────────────────────────────────
+  # Nginx — Backend API Server (Internal Routing)
+  # ─────────────────────────────────────────────────
+  backend_nginx:
+    image: nginx:1.27-alpine
+    container_name: angkor_backend_nginx
+    restart: unless-stopped
+    volumes:
+      - ./backend/docker/nginx-backend.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./backend/public:/var/www/backend/public:ro
+      - storage_uploads:/var/www/backend/storage/app/public:ro
+    networks:
+      - angkor_net
+    depends_on:
+      - app
+
+  # ─────────────────────────────────────────────────
+  # React/Vite Frontend SPA
+  # ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://angkorauto.work/api
+        VITE_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+    container_name: angkor_frontend
+    restart: unless-stopped
+    networks:
+      - angkor_net
+
+  # ─────────────────────────────────────────────────
+  # Edge Nginx — Public Gateway (HTTP / HTTPS Proxy)
+  # ─────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: angkor_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot:/var/www/certbot:rw
+      - ./certs:/etc/letsencrypt:ro
+    networks:
+      - angkor_net
+    depends_on:
+      - frontend
+      - backend_nginx
+
+  # ─────────────────────────────────────────────────
+  # Redis — Queue & Cache
+  # ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: angkor_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - angkor_net
+
+  # ─────────────────────────────────────────────────
+  # Certbot — Automatic Let's Encrypt SSL Renewals
+  # ─────────────────────────────────────────────────
+  certbot:
+    image: certbot/certbot
+    container_name: angkor_certbot
+    restart: unless-stopped
+    volumes:
+      - ./certs:/etc/letsencrypt:rw
+      - ./certbot:/var/www/certbot:rw
+    entrypoint: ["/bin/sh","-c","while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot --deploy-hook 'docker compose exec nginx nginx -s reload' || true; done"]
+    networks:
+      - angkor_net
+
+# ─────────────────────────────────────────────────
+# Volumes & Networks
+# ─────────────────────────────────────────────────
+volumes:
+  storage_uploads:
+  storage_logs:
+  redis_data:
+
+networks:
+  angkor_net:
+    driver: bridge
