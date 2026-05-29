@@ -13,3 +13,6 @@ docker/volumes/
 
 # macOS
 __MACOSX/
+
+# Agent IDE files
+.antigravitycli/
