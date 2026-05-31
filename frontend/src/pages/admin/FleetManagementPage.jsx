@@ -13,7 +13,7 @@ const STATUS_STYLES = {
 const EMPTY_FORM = { brand: '', model: '', year: '', color: '', plate_number: '', daily_rate: '', status: 'available', description: '' };
 
 export default function FleetManagementPage() {
-  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : '';
+  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
   const [vehicles,     setVehicles]     = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState('');

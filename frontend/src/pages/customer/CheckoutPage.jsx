@@ -246,8 +246,9 @@ export default function CheckoutPage() {
     ? new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
     : '—';
 
+  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
   const imgSrc = vehicle.image
-    ? `${import.meta.env.VITE_API_URL?.replace('/api', '') || ''}/storage/${vehicle.image}`
+    ? `${baseUrl}/storage/${vehicle.image}`
     : null;
 
   // If no booking data, redirect back
