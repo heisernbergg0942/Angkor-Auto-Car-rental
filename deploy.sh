@@ -4,14 +4,13 @@
 # Usage: bash deploy.sh
 # ─────────────────────────────────────────────────────────────────────────────
 
-echo "⚡ Optimizing application cache..."
-echo ""
 set -euo pipefail
 
 # Use the script directory as the project root so the script is portable
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
 REPO_URL="https://github.com/heisernbergg0942/Angkor-Auto-Car-rental.git"   # Automatically updated
+PUBLIC_URL="${PUBLIC_URL:-https://angkorauto.work}"
 
 echo "🚀 Starting Angkor Auto Car Rental deployment in: $PROJECT_DIR"
 
@@ -85,10 +84,13 @@ artisan() {
 
 # 6. Ensure APP_KEY exists in the env inside container; generate if missing
 echo "🔐 Ensuring APP_KEY is present..."
-if ! grep -q '^APP_KEY=' "$ENV_FILE" || grep -q '^APP_KEY=$' "$ENV_FILE"; then
-  echo "APP_KEY is empty in $ENV_FILE — generating inside container..."
-  # Try to generate via artisan (writes to .env inside container volume)
-  docker compose --env-file "$ENV_FILE" exec -T app php artisan key:generate --force || true
+APP_KEY_VALUE="$(grep -E '^APP_KEY=' "$ENV_FILE" | tail -n 1 | cut -d '=' -f2- | sed 's/[[:space:]]*#.*$//' | xargs || true)"
+if [ -z "$APP_KEY_VALUE" ] || [ "$APP_KEY_VALUE" = "base64:" ]; then
+  echo "❌ ERROR: APP_KEY is missing or invalid in $ENV_FILE"
+  echo "   Generate one locally with:"
+  echo "   cd backend && php artisan key:generate --show"
+  echo "   Then set APP_KEY=base64:... in backend/.env.production and rerun deploy."
+  exit 1
 fi
 
 echo "⚙️  Running Laravel storage link and migrations..."
@@ -103,7 +105,5 @@ docker compose --env-file "$ENV_FILE" exec -T app php artisan cache:clear || tru
 
 echo ""
 echo "✅ Deployment complete!"
-IP=$(curl -s https://ifconfig.me || hostname -I | awk '{print $1}' || true)
-echo "📍 Your app is now live at: http://$IP"
+echo "📍 Your app is now live at: $PUBLIC_URL"
 echo ""
-
