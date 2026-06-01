@@ -27,6 +27,12 @@ class BookingController extends Controller
     public function show($id)
     {
         $booking = Booking::with('customer.user', 'vehicle', 'rental.invoices.payments', 'rental.invoice.payments', 'rental.return')->findOrFail($id);
+
+        $user = request()->user();
+        if ($user->role === 'customer' && $booking->customer_id !== optional($user->customer)->id) {
+            return response()->json(['message' => 'Forbidden: this booking does not belong to you'], 403);
+        }
+
         return response()->json($booking);
     }
 

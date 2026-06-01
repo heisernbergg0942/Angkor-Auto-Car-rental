@@ -10,6 +10,13 @@ class InvoiceController extends Controller
     public function show($id)
     {
         $invoice = Invoice::with('rental.booking.customer', 'rental.booking.vehicle', 'payments')->findOrFail($id);
+
+        $user = request()->user();
+        $customerId = optional($invoice->rental?->booking?->customer)->id;
+        if ($user->role === 'customer' && $customerId !== optional($user->customer)->id) {
+            return response()->json(['message' => 'Forbidden: this invoice does not belong to you'], 403);
+        }
+
         return response()->json($invoice);
     }
 
