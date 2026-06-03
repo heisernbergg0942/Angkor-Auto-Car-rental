@@ -170,31 +170,7 @@ export default function VehicleDetailPage() {
               </div>
             )}
 
-            {/* Available Add-ons */}
-            {addons.length > 0 && (
-              <div>
-                <h2 className="font-bold text-gray-900 text-base mb-3">Available Add-ons</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {addons.map(addon => (
-                    <label key={addon.id} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${selected[addon.id] ? 'border-[#2D6A4F] bg-emerald-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <div className="flex items-center gap-2.5">
-                        <input
-                          type="checkbox"
-                          checked={!!selected[addon.id]}
-                          onChange={() => toggleAddon(addon.id)}
-                          className="w-3.5 h-3.5 rounded text-[#2D6A4F] border-gray-300 focus:ring-[#2D6A4F]"
-                        />
-                        <div>
-                          <div className="text-xs font-semibold text-gray-700">{addon.name}</div>
-                          <div className="text-[10px] text-gray-400">{addon.description}</div>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold text-[#2D6A4F] ml-2 shrink-0">${addon.price_per_day}/day</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
+
           </div>
 
           {/* Right — Booking Panel */}
@@ -231,6 +207,29 @@ export default function VehicleDetailPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Add-ons & Extras */}
+              {addons.length > 0 && (
+                <div className="mb-5">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">ADD-ONS & EXTRAS</div>
+                  <div className="space-y-3">
+                    {addons.map(addon => (
+                      <label key={addon.id} className="flex items-start gap-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={!!selected[addon.id]}
+                          onChange={() => toggleAddon(addon.id)}
+                          className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#2D6A4F] focus:ring-[#2D6A4F] cursor-pointer"
+                        />
+                        <div className="flex-1 leading-tight">
+                          <div className="text-[13px] text-gray-800">{addon.name}</div>
+                          <div className="text-[11px] text-gray-500">${addon.price_per_day} / day</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Price Breakdown */}
               <div className="space-y-2 py-4 border-t border-b border-gray-100 mb-4">
