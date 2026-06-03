@@ -171,9 +171,9 @@ export default function VehicleDetailPage() {
             )}
 
             {/* Available Add-ons */}
-            <div>
-              <h2 className="font-bold text-gray-900 text-base mb-3">Available Add-ons</h2>
-              {addons.length > 0 ? (
+            {addons.length > 0 && (
+              <div>
+                <h2 className="font-bold text-gray-900 text-base mb-3">Available Add-ons</h2>
                 <div className="grid grid-cols-2 gap-3">
                   {addons.map(addon => (
                     <label key={addon.id} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${selected[addon.id] ? 'border-[#2D6A4F] bg-emerald-50' : 'border-gray-200 hover:border-gray-300'}`}>
@@ -193,12 +193,8 @@ export default function VehicleDetailPage() {
                     </label>
                   ))}
                 </div>
-              ) : (
-                <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center border border-gray-100">
-                  No add-ons available at the moment.
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Right — Booking Panel */}
